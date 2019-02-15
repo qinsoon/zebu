@@ -26,7 +26,7 @@ use objectmodel::sidemap::object_encode::SMALL_ID_WIDTH;
 
 /// represents a chunk of memory as global type table, which contains some metadata for the
 /// type table and all the type encoding entries.
-#[repr(C, packed)]
+#[repr(C)]
 pub struct GlobalTypeTable {
     /// current index for small entries
     small_entry_i: usize,

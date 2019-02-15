@@ -22,9 +22,9 @@ crate-type = ["rlib"]
 
 [dependencies]
 mu_utils = {path = "../utils"}
-lazy_static = "*"
+lazy_static = "0.2.11"
 log = "*"
 simple_logger = "*"
-regex = "*"
+regex = "0.2.2"
 rodal = { git = "https://gitlab.anu.edu.au/mu/rodal", branch = "new", version = "^0.1.13" }
 #rodal = { path = "../../rodal", version = "*" }

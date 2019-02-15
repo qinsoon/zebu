@@ -32,11 +32,11 @@ gcc = "*"
 [dependencies]
 mu_utils = {path = "../utils"}
 time = "*"
-lazy_static = "*"
+lazy_static = "0.2.11"
 log = "*"
 stderrlog = "*"
 aligned_alloc = "*"
-crossbeam = "*"
+crossbeam = "0.3.0"
 field-offset = "*"
 rodal = { git = "https://gitlab.anu.edu.au/mu/rodal", branch = "new", version = "^0.1.13" }
 #rodal = { path = "../../rodal", version = "*" }
