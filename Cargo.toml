@@ -31,13 +31,13 @@ sel4-rumprun-target-side = []
 
 [build-dependencies]
 gcc = "*"
-#built = "0.1"
+built = "*"
 
 [dependencies]
 mu_ast = {path = "src/ast"}
 mu_utils = {path = "src/utils"}
 #mu_gc = {path = "src/gc"}
-rodal = { git = "https://gitlab.anu.edu.au/mu/rodal", branch = "new", version = "^0.1.13" }
+rodal = { git = "https://gitlab.anu.edu.au/mu/rodal", branch = "rust-1.30.1", version = "^0.3.18" }
 #rodal = { path = "./rodal", version = "*" }
 
 libc="*"
@@ -58,28 +58,29 @@ docopt = "0.8.1"
 petgraph = "*"
 extprim = "*"
 num-traits = "*"
+built = "*"
+mu_gc = { path = "src/gc"}
+
+#[target.aarch64-unknown-linux-gnu.dependencies]
+#mu_gc = { path = "src/gc"}
 #built = "0.1"
-
-[target.aarch64-unknown-linux-gnu.dependencies]
-mu_gc = { path = "src/gc"}
-built = "0.1"
-
-[target.x86_64-unknown-linux-gnu.dependencies]
-mu_gc = { path = "src/gc"}
-built = "0.1"
-
-[target.x86_64-apple-darwin.dependencies]
-mu_gc = { path = "src/gc"}
-built = "0.1"
-
-[target.x86_64-rumprun-netbsd.dependencies]
-mu_gc = { path = "src/gc", features = ["sel4-rumprun-target-side"], target = "x86_64-rumprun-netbsd"}
-
-[target.aarch64-unknown-linux-gnu.build-dependencies]
-built = "0.1"
-
-[target.x86_64-unknown-linux-gnu.build-dependencies]
-built = "0.1"
-
-[target.x86_64-apple-darwin.build-dependencies]
-built = "0.1"
+#
+#[target.x86_64-unknown-linux-gnu.dependencies]
+#mu_gc = { path = "src/gc"}
+#built = "*"
+#
+#[target.x86_64-apple-darwin.dependencies]
+#mu_gc = { path = "src/gc"}
+#built = "0.1"
+#
+#[target.x86_64-rumprun-netbsd.dependencies]
+#mu_gc = { path = "src/gc", features = ["sel4-rumprun-target-side"], target = "x86_64-rumprun-netbsd"}
+#
+#[target.aarch64-unknown-linux-gnu.build-dependencies]
+#built = "0.1"
+#
+#[target.x86_64-unknown-linux-gnu.build-dependencies]
+#built = "*"
+#
+#[target.x86_64-apple-darwin.build-dependencies]
+#built = "0.1"
