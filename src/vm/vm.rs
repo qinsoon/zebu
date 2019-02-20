@@ -41,7 +41,7 @@ use std::sync::Arc;
 use std::sync::RwLock;
 use std::sync::Mutex;
 use std::sync::RwLockWriteGuard;
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::JoinHandle;
 use std::collections::LinkedList;
 use std;
@@ -231,7 +231,7 @@ impl<'a> VM {
         VM::start_logging(options.flag_log_level);
 
         let ret = VM {
-            next_id: ATOMIC_USIZE_INIT,
+            next_id: AtomicUsize::new(0),
             vm_options: options,
             id_name_map: RwLock::new(HashMap::new()),
             name_id_map: RwLock::new(HashMap::new()),
@@ -251,7 +251,7 @@ impl<'a> VM {
             aot_pending_funcref_store: RwLock::new(HashMap::new()),
             compiled_callsite_table: RwLock::new(HashMap::new()),
             primordial_threadlocal: RwLock::new(None),
-            callsite_count: ATOMIC_USIZE_INIT,
+            callsite_count: AtomicUsize::new(0),
             pending_joins: Mutex::new(LinkedList::new())
         };
 
@@ -282,7 +282,7 @@ impl<'a> VM {
         VM::start_logging(options.flag_log_level);
 
         let mut ret = VM {
-            next_id: ATOMIC_USIZE_INIT,
+            next_id: AtomicUsize::new(0),
             vm_options: options,
             id_name_map: RwLock::new(HashMap::new()),
             name_id_map: RwLock::new(HashMap::new()),
@@ -299,7 +299,7 @@ impl<'a> VM {
             primordial: RwLock::new(None),
             aot_pending_funcref_store: RwLock::new(HashMap::new()),
             compiled_callsite_table: RwLock::new(HashMap::new()),
-            callsite_count: ATOMIC_USIZE_INIT
+            callsite_count: AtomicUsize::new(0)
         };
 
         // currently, the default sizes don't work on sel4-rumprun platform
@@ -1875,7 +1875,7 @@ impl<'a> VM {
             id: handle_id,
             v: APIHandleValue::Ref(types::REF_VOID_TYPE.clone(), unsafe {
                 Address::from_usize(
-                    ((opnd & 0x7ffffffffff8u64) | u64_asr((opnd & 0x8000000000000000u64), 16)) as
+                    ((opnd & 0x7ffffffffff8u64) | u64_asr(opnd & 0x8000000000000000u64, 16)) as
                         usize
                 )
             })
@@ -1889,7 +1889,7 @@ impl<'a> VM {
         self.new_handle(APIHandle {
             id: handle_id,
             v: APIHandleValue::Int(
-                u64_asr((opnd & 0x000f800000000000u64), 46) | (u64_asr((opnd & 0x4), 2)),
+                u64_asr(opnd & 0x000f800000000000u64, 46) | (u64_asr(opnd & 0x4, 2)),
                 6
             )
         })

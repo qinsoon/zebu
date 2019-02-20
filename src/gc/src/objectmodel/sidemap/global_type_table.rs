@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use std::sync::RwLock;
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
 use std::mem;
 use utils::mem::*;
@@ -48,9 +48,9 @@ const LARGE_ENTRY_CAP: usize = N_TYPES;
 const FULL_ENTRY_START: usize = LARGE_ENTRY_CAP + 1;
 
 /// storing a pointer to the actual type table
-static GLOBAL_TYPE_TABLE_PTR: AtomicUsize = ATOMIC_USIZE_INIT;
+static GLOBAL_TYPE_TABLE_PTR: AtomicUsize = AtomicUsize::new(0);
 /// storing a pointer to the metadata of the type table
-static GLOBAL_TYPE_TABLE_META: AtomicUsize = ATOMIC_USIZE_INIT;
+static GLOBAL_TYPE_TABLE_META: AtomicUsize = AtomicUsize::new(0);
 
 impl GlobalTypeTable {
     pub fn init() {

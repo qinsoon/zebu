@@ -24,7 +24,7 @@ use std;
 use std::fmt;
 pub use std::sync::Arc;
 use std::default;
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub type WPID = usize;
 pub type MuID = usize;
@@ -44,12 +44,12 @@ pub type OpIndex = usize;
 
 lazy_static! {
     pub static ref MACHINE_ID : AtomicUsize = {
-        let a = ATOMIC_USIZE_INIT;
+        let a = AtomicUsize::new(0);
         a.store(MACHINE_ID_START, Ordering::SeqCst);
         a
     };
     pub static ref INTERNAL_ID : AtomicUsize = {
-        let a = ATOMIC_USIZE_INIT;
+        let a = AtomicUsize::new(0);
         a.store(INTERNAL_ID_START, Ordering::SeqCst);
         a
     };
@@ -1210,7 +1210,7 @@ impl SSAVarEntry {
     pub fn new(val: P<Value>) -> SSAVarEntry {
         let ret = SSAVarEntry {
             val: val,
-            use_count: ATOMIC_USIZE_INIT,
+            use_count: AtomicUsize::new(0),
             expr: None,
             split: None,
             def: None

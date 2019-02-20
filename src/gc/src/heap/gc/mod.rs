@@ -15,7 +15,7 @@
 use heap::*;
 use objectmodel::*;
 use MY_GC;
-use std::sync::atomic::{AtomicIsize, AtomicBool, Ordering};
+use std::sync::atomic::{AtomicIsize, AtomicUsize, AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Condvar, RwLock};
 
 use crossbeam::sync::chase_lev::*;
@@ -33,9 +33,9 @@ lazy_static! {
     static ref ROOTS : RwLock<Vec<ObjectReference>> = RwLock::new(vec![]);
 }
 
-pub static ENABLE_GC: AtomicBool = atomic::ATOMIC_BOOL_INIT;
+pub static ENABLE_GC: AtomicBool = AtomicBool::new(false);
 
-static CONTROLLER: AtomicIsize = atomic::ATOMIC_ISIZE_INIT;
+static CONTROLLER: AtomicIsize = AtomicIsize::new(0);
 const NO_CONTROLLER: isize = -1;
 
 pub fn init(n_gcthreads: usize) {
@@ -228,7 +228,7 @@ fn block_current_thread(mutator: &mut Mutator) {
     trace!("Mutator{} unblocked", mutator.id());
 }
 
-pub static GC_COUNT: atomic::AtomicUsize = atomic::ATOMIC_USIZE_INIT;
+pub static GC_COUNT: atomic::AtomicUsize = AtomicUsize::new(0);
 
 fn gc() {
     if !ENABLE_GC.load(Ordering::SeqCst) {
@@ -286,7 +286,7 @@ fn gc() {
 }
 
 pub const PUSH_BACK_THRESHOLD: usize = 50;
-pub static GC_THREADS: atomic::AtomicUsize = atomic::ATOMIC_USIZE_INIT;
+pub static GC_THREADS: atomic::AtomicUsize = AtomicUsize::new(0);
 
 const TRACE_GC: bool = true;
 
@@ -406,16 +406,18 @@ pub fn steal_trace_object(
             };
             // mark as traced
             hdr.gc_byte = 1;
-            match hdr.encode {
-                ObjectEncode::Tiny(ref enc) => trace_tiny_object(obj, enc, local_queue, job_sender),
-                ObjectEncode::Small(ref enc) => {
-                    trace_small_object(obj, enc, local_queue, job_sender)
-                }
-                ObjectEncode::Medium(ref enc) => {
-                    trace_medium_object(obj, enc, local_queue, job_sender)
-                }
-                ObjectEncode::Large(ref enc) => {
-                    trace_large_object(obj, enc, local_queue, job_sender)
+            unsafe {
+                match hdr.encode {
+                    ObjectEncode::Tiny(ref enc) => trace_tiny_object(obj, enc, local_queue, job_sender),
+                    ObjectEncode::Small(ref enc) => {
+                        trace_small_object(obj, enc, local_queue, job_sender)
+                    }
+                    ObjectEncode::Medium(ref enc) => {
+                        trace_medium_object(obj, enc, local_queue, job_sender)
+                    }
+                    ObjectEncode::Large(ref enc) => {
+                        trace_large_object(obj, enc, local_queue, job_sender)
+                    }
                 }
             }
         }
