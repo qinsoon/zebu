@@ -121,7 +121,7 @@ pub struct FullTypeEncode {
 rodal_struct!(FullTypeEncode { align, fix, var });
 
 /// TypeEncode
-#[repr(C, packed)]
+#[repr(C)]
 // Clone, PartialEq, Eq, Hash, Debug
 pub struct ShortTypeEncode {
     /// alignment requirement

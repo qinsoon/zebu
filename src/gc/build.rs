@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate gcc;
+extern crate cc;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[cfg(target_arch = "x86_64")]
 fn build_libgc() {
-    gcc::Build::new()
+    cc::Build::new()
         .flag("-O3")
         .flag("-c")
         .file("src/heap/gc/clib_x64.c")
@@ -27,7 +27,7 @@ fn build_libgc() {
 #[cfg(target_os = "linux")]
 #[cfg(target_arch = "aarch64")]
 fn build_libgc() {
-    gcc::Build::new()
+    cc::Build::new()
         .flag("-O3")
         .flag("-c")
         .file("src/heap/gc/clib_aarch64.S")
@@ -38,7 +38,7 @@ fn build_libgc() {
 #[cfg(target_os = "windows")]
 #[cfg(target_arch = "x86_64")]
 fn build_libgc() {
-    gcc::Build::new()
+    cc::Build::new()
         .flag("-O3")
         .flag("-c")
         .file("src/heap/gc/clib_aarch64.S")
@@ -68,7 +68,7 @@ fn main() {
         use std::path::Path;
         let mut compiler_name = String::new();
         compiler_name.push_str("x86_64-rumprun-netbsd-gcc");
-        gcc::Build::new()
+        cc::Build::new()
             .flag("-O3")
             .flag("-c")
             .compiler(Path::new(compiler_name.as_str()))

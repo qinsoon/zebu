@@ -30,7 +30,7 @@ sel4-rumprun = []
 sel4-rumprun-target-side = []
 
 [build-dependencies]
-gcc = "*"
+cc = "*"
 built = "*"
 
 [dependencies]

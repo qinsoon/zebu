@@ -177,12 +177,8 @@ fn link_executable_internal(
     }
     // dylibs used for linux
     if cfg!(target_os = "linux") {
-        cc.arg("-ldl");
-        cc.arg("-lrt");
-        cc.arg("-lm");
         cc.arg("-lpthread");
-        cc.arg("-lz");
-    } else if cfg!(target_os = "macos") {
+    } else if cfg!(target_os = "macos") {   // TODO macos args need to be updated
         cc.arg("-liconv");
         cc.arg("-framework");
         cc.arg("Security");
