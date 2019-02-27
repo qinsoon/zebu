@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ast::ir::*;
 use ast::inst::*;
+use ast::ir::*;
 use ast::ptr::*;
-use vm::VM;
 use compiler::CompilerPass;
 use compiler::EPILOGUE_BLOCK_NAME;
 use std::any::Any;
+use vm::VM;
 
 /// Mu IR the client gives us may contain several RET instructions. However,
 /// internally we want a single exit point for a function. In this pass, we
 /// create a return sink (a block), and rewrite all the RET instruction into
 /// a BRANCH with return values.
 pub struct RetSink {
-    name: &'static str
+    name: &'static str,
 }
 
 impl RetSink {
     pub fn new() -> RetSink {
         RetSink {
-            name: "Creating Return Sink"
+            name: "Creating Return Sink",
         }
     }
 }
@@ -58,7 +58,8 @@ impl CompilerPass for RetSink {
             block.trace_hint = TraceHint::ReturnSink;
 
             let sig = func.sig.clone();
-            let args: Vec<P<Value>> = sig.ret_tys
+            let args: Vec<P<Value>> = sig
+                .ret_tys
                 .iter()
                 .map(|ty| {
                     func.new_ssa(MuEntityHeader::unnamed(vm.next_id()), ty.clone())
@@ -69,17 +70,16 @@ impl CompilerPass for RetSink {
             block.content = Some(BlockContent {
                 args: args.clone(),
                 exn_arg: None,
-                body: vec![
-                    func.new_inst(Instruction {
-                        hdr: MuEntityHeader::unnamed(vm.next_id()),
-                        value: None,
-                        ops: args.iter()
-                            .map(|val| TreeNode::new_value(val.clone()))
-                            .collect(),
-                        v: Instruction_::Return((0..args.len()).collect())
-                    }),
-                ],
-                keepalives: None
+                body: vec![func.new_inst(Instruction {
+                    hdr: MuEntityHeader::unnamed(vm.next_id()),
+                    value: None,
+                    ops: args
+                        .iter()
+                        .map(|val| TreeNode::new_value(val.clone()))
+                        .collect(),
+                    v: Instruction_::Return((0..args.len()).collect()),
+                })],
+                keepalives: None,
             });
 
             block
@@ -110,14 +110,14 @@ impl CompilerPass for RetSink {
                             ops: ops.clone(),
                             v: Instruction_::Branch1(Destination {
                                 target: return_sink.hdr.clone(),
-                                args: arg_index.iter().map(|i| DestArg::Normal(*i)).collect()
-                            })
+                                args: arg_index.iter().map(|i| DestArg::Normal(*i)).collect(),
+                            }),
                         });
                         trace!(">> rewrite ret to {}", branch_to_sink);
                         new_body.push(branch_to_sink);
                         has_ret = true;
                     }
-                    _ => new_body.push(node.clone())
+                    _ => new_body.push(node.clone()),
                 }
             }
 
@@ -125,7 +125,7 @@ impl CompilerPass for RetSink {
                 args: block_content.args.to_vec(),
                 exn_arg: block_content.exn_arg.clone(),
                 body: new_body,
-                keepalives: block_content.keepalives.clone()
+                keepalives: block_content.keepalives.clone(),
             });
         }
 

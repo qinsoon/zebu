@@ -14,17 +14,17 @@
 
 extern crate libloading;
 
-use mu::ast::types::*;
-use mu::ast::ir::*;
 use mu::ast::inst::*;
+use mu::ast::ir::*;
 use mu::ast::op::*;
-use mu::vm::*;
+use mu::ast::types::*;
 use mu::linkutils;
 use mu::utils::LinkedHashMap;
+use mu::vm::*;
 
-use std::sync::Arc;
-use mu::linkutils::aot;
 use mu::compiler::*;
+use mu::linkutils::aot;
+use std::sync::Arc;
 
 #[test]
 fn test_switch() {
@@ -66,7 +66,7 @@ fn switch() -> VM {
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: None,
         ops: vec![
-            a.clone(), // 0
+            a.clone(),             // 0
             int64_0_local.clone(), // 1
             int64_1_local.clone(), // 2
             int64_2_local.clone(), // 3
@@ -75,14 +75,32 @@ fn switch() -> VM {
             cond: 0,
             default: Destination {
                 target: blk_default.hdr.clone(),
-                args: vec![]
+                args: vec![],
             },
             branches: vec![
-                (1, Destination{target: blk_ret0.hdr.clone(), args: vec![]}),
-                (2, Destination{target: blk_ret1.hdr.clone(), args: vec![]}),
-                (3, Destination{target: blk_ret2.hdr.clone(), args: vec![]})
-            ]
-        }
+                (
+                    1,
+                    Destination {
+                        target: blk_ret0.hdr.clone(),
+                        args: vec![],
+                    },
+                ),
+                (
+                    2,
+                    Destination {
+                        target: blk_ret1.hdr.clone(),
+                        args: vec![],
+                    },
+                ),
+                (
+                    3,
+                    Destination {
+                        target: blk_ret2.hdr.clone(),
+                        args: vec![],
+                    },
+                ),
+            ],
+        },
     });
 
     define_block!((vm, switch_v1) blk_entry(a) {
@@ -1043,8 +1061,16 @@ fn branch2_eq_50p_2() -> VM {
 
 #[test]
 fn test_branch2_high_prob_branch_cannot_fallthrough() {
-    build_and_run_test!(branch2, branch2_test1, branch2_high_prob_branch_cannot_fallthrough);
-    build_and_run_test!(branch2, branch2_test2, branch2_high_prob_branch_cannot_fallthrough);
+    build_and_run_test!(
+        branch2,
+        branch2_test1,
+        branch2_high_prob_branch_cannot_fallthrough
+    );
+    build_and_run_test!(
+        branch2,
+        branch2_test2,
+        branch2_high_prob_branch_cannot_fallthrough
+    );
 }
 
 fn branch2_high_prob_branch_cannot_fallthrough() -> VM {
@@ -1161,7 +1187,7 @@ fn test_branch_adjust_follow_by_neither() {
 
     linkutils::aot::compile_fnc(
         "branch_adjust_follow_by_neither",
-        &branch_adjust_follow_by_neither
+        &branch_adjust_follow_by_neither,
     );
 }
 

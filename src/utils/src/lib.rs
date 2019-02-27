@@ -67,12 +67,12 @@ mod tree;
 
 // re-export these data structures
 
+pub use self::doubly::DoublyLinkedList;
 pub use linked_hashmap::LinkedHashMap;
 pub use linked_hashset::LinkedHashSet;
 pub use linked_multimap::LinkedMultiMap;
 pub use linked_multimap::LinkedRepeatableMultiMap;
 pub use tree::Tree;
-pub use self::doubly::DoublyLinkedList;
 
 /// mem module:
 /// * conversions of bit representations
@@ -92,12 +92,12 @@ pub use address::ObjectReference;
 // These modules provide operations on Vector, and String.
 // They are not found in the standard library.
 // (maybe because they are likely inefficient?)
-/// vector utilities
-pub mod vec_utils;
-/// string utilities
-pub mod string_utils;
 /// bit operations
 pub mod bit_utils;
+/// string utilities
+pub mod string_utils;
+/// vector utilities
+pub mod vec_utils;
 
 /// the macro to create LinkedHashMap
 #[macro_export]

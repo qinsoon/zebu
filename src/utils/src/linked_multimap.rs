@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::hash_map;
-use std::hash::Hash;
-use std::fmt;
-use std::fmt::Debug;
 use linked_hashmap::LinkedHashMap;
 use linked_hashmap::{Iter, Keys};
 use linked_hashset::LinkedHashSet;
+use std::collections::hash_map;
+use std::fmt;
+use std::fmt::Debug;
+use std::hash::Hash;
 
 pub struct LinkedMultiMap<K, V, S = hash_map::RandomState> {
-    inner: LinkedHashMap<K, LinkedHashSet<V, S>>
+    inner: LinkedHashMap<K, LinkedHashSet<V, S>>,
 }
 
 impl<K: Hash + Eq, V: Hash + Eq> LinkedMultiMap<K, V> {
     pub fn new() -> LinkedMultiMap<K, V> {
         LinkedMultiMap {
-            inner: LinkedHashMap::new()
+            inner: LinkedHashMap::new(),
         }
     }
 
@@ -89,13 +89,13 @@ impl<K: Hash + Eq + Debug, V: Hash + Eq + Debug> Debug for LinkedMultiMap<K, V> 
 }
 
 pub struct LinkedRepeatableMultiMap<K, V> {
-    inner: LinkedHashMap<K, Vec<V>>
+    inner: LinkedHashMap<K, Vec<V>>,
 }
 
 impl<K: Hash + Eq, V> LinkedRepeatableMultiMap<K, V> {
     pub fn new() -> LinkedRepeatableMultiMap<K, V> {
         LinkedRepeatableMultiMap {
-            inner: LinkedHashMap::new()
+            inner: LinkedHashMap::new(),
         }
     }
 

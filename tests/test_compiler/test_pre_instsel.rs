@@ -14,11 +14,11 @@
 
 extern crate mu;
 
-use test_ir::test_ir::factorial;
-use test_ir::test_ir::sum;
 use self::mu::ast::ir::*;
 use self::mu::compiler::*;
 use self::mu::vm::VM;
+use test_ir::test_ir::factorial;
+use test_ir::test_ir::sum;
 
 use std::sync::Arc;
 
@@ -29,7 +29,7 @@ fn test_use_count() {
     let vm = Arc::new(factorial());
     let compiler = Compiler::new(
         CompilerPolicy::new(vec![Box::new(passes::DefUse::new())]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("fac");
@@ -49,7 +49,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_0_n_3"))
             .unwrap()
-            .use_count() == 2,
+            .use_count()
+            == 2,
         "blk_0_n_3 use should be 2"
     );
     assert!(
@@ -57,7 +58,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_0_v48"))
             .unwrap()
-            .use_count() == 1,
+            .use_count()
+            == 1,
         "blk_0_v48 use should be 1"
     );
     assert!(
@@ -65,7 +67,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_2_v53"))
             .unwrap()
-            .use_count() == 1,
+            .use_count()
+            == 1,
         "blk_2_v53 use should be 1"
     );
     assert!(
@@ -73,7 +76,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_1_n_3"))
             .unwrap()
-            .use_count() == 2,
+            .use_count()
+            == 2,
         "blk_1_n_3 use should be 2"
     );
     assert!(
@@ -81,7 +85,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_1_v50"))
             .unwrap()
-            .use_count() == 1,
+            .use_count()
+            == 1,
         "blk_1_v50 use should be 1"
     );
     assert!(
@@ -89,7 +94,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_1_v51"))
             .unwrap()
-            .use_count() == 1,
+            .use_count()
+            == 1,
         "blk_1_v51 use should be 1"
     );
     assert!(
@@ -97,7 +103,8 @@ fn test_use_count() {
             .context
             .get_value(vm.id_of("blk_1_v52"))
             .unwrap()
-            .use_count() == 1,
+            .use_count()
+            == 1,
         "blk_1_v52 use should be 1"
     );
 }
@@ -112,7 +119,7 @@ fn test_build_tree() {
             Box::new(passes::DefUse::new()),
             Box::new(passes::TreeGen::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("fac");
@@ -193,7 +200,7 @@ fn test_cfa_factorial() {
             Box::new(passes::GenMovPhi::new()),
             Box::new(passes::ControlFlowAnalysis::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("fac");
@@ -246,7 +253,7 @@ fn test_cfa_sum() {
             Box::new(passes::GenMovPhi::new()),
             Box::new(passes::ControlFlowAnalysis::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("sum");
@@ -319,7 +326,7 @@ fn test_trace_factorial() {
             Box::new(passes::ControlFlowAnalysis::new()),
             Box::new(passes::TraceGen::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("fac");
@@ -353,7 +360,7 @@ fn test_trace_sum() {
             Box::new(passes::ControlFlowAnalysis::new()),
             Box::new(passes::TraceGen::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("sum");

@@ -14,9 +14,9 @@
 
 extern crate mu;
 
-use test_ir::test_ir::factorial;
 use self::mu::compiler::*;
 use self::mu::vm::VM;
+use test_ir::test_ir::factorial;
 
 use std::sync::Arc;
 
@@ -34,7 +34,7 @@ fn test_instsel_fac() {
             Box::new(passes::TraceGen::new()),
             Box::new(backend::inst_sel::InstructionSelection::new()),
         ]),
-        &vm
+        &vm,
     );
 
     let func_id = vm.id_of("fac");

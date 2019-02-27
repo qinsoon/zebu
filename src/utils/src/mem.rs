@@ -20,11 +20,11 @@ pub extern crate memmap;
 pub extern crate memsec;
 
 #[allow(unused_imports)] // import both endianness (we may not use big endian though)
-use byteorder::{LittleEndian, BigEndian, ReadBytesExt, WriteBytesExt, ByteOrder};
+use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 
+use std::ptr;
 use Address;
 use ByteSize;
-use std::ptr;
 
 #[cfg(target_os = "macos")]
 fn mmap_flags() -> libc::c_int {
@@ -45,7 +45,7 @@ pub fn mmap_large(size: ByteSize) -> Address {
             PROT_READ | PROT_WRITE,
             mmap_flags(),
             -1,
-            0
+            0,
         )
     };
 
@@ -71,7 +71,7 @@ pub unsafe fn malloc_zero(size: usize) -> *mut u8 {
             memsec::memzero(ptr, size);
             ptr
         }
-        None => panic!("failed to malloc_zero() {} bytes", size)
+        None => panic!("failed to malloc_zero() {} bytes", size),
     }
 }
 

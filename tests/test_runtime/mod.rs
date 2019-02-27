@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod test_threadlocal;
-mod test_entry_offset;
-mod test_mem_layout;
 mod test_address;
+mod test_entry_offset;
 mod test_gc_encode;
+mod test_mem_layout;
+mod test_threadlocal;

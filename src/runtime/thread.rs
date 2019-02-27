@@ -334,33 +334,33 @@ impl fmt::Display for MuThread {
             "MuThread    @{:?}: {}\n",
             self as *const MuThread, self.hdr
         )
-            .unwrap();
+        .unwrap();
         write!(f, "- header    @{:?}\n", &self.hdr as *const MuEntityHeader).unwrap();
         write!(
             f,
             "- allocator @{:?}\n",
             &self.allocator as *const mm::Mutator
         )
-            .unwrap();
+        .unwrap();
         write!(f, "- stack     @{:?}\n", &self.stack as *const *mut MuStack).unwrap();
         write!(
             f,
             "- native sp @{:?}: {}\n",
             &self.native_sp_loc as *const Address, self.native_sp_loc
         )
-            .unwrap();
+        .unwrap();
         write!(
             f,
             "- user_tls  @{:?}: {}\n",
             &self.user_tls as *const Address, self.user_tls
         )
-            .unwrap();
+        .unwrap();
         write!(
             f,
             "- exc obj   @{:?}: {}\n",
             &self.exception_obj as *const Address, self.exception_obj
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }

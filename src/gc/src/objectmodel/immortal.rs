@@ -21,5 +21,5 @@ pub const IMMORTAL_OBJECT_HEADER_SIZE: ByteSize = 32;
 #[repr(C, packed)]
 pub struct ImmortalObjectHeader {
     pub encode: ObjectEncode,
-    pub gc_byte: u8
+    pub gc_byte: u8,
 }

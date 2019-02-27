@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use ast::inst::*;
 use ast::ir::*;
 use ast::ptr::*;
-use ast::inst::*;
 use vm::VM;
 
 use compiler::CompilerPass;
@@ -25,7 +25,7 @@ pub struct Inlining {
     name: &'static str,
 
     // whether a function version should be inlined
-    should_inline: HashMap<MuID, bool>
+    should_inline: HashMap<MuID, bool>,
 }
 
 impl CompilerPass for Inlining {
@@ -54,7 +54,7 @@ impl Inlining {
     pub fn new() -> Inlining {
         Inlining {
             name: "Inlining",
-            should_inline: HashMap::new()
+            should_inline: HashMap::new(),
         }
     }
 
@@ -86,7 +86,7 @@ impl Inlining {
         has_exc: bool,
         callee: MuID,
         caller: MuID,
-        vm: &VM
+        vm: &VM,
     ) -> bool {
         // recursive call, do not inline
         if callee == caller {
@@ -96,7 +96,7 @@ impl Inlining {
         let funcs_guard = vm.funcs().read().unwrap();
         let func = match funcs_guard.get(&callee) {
             Some(func) => func.read().unwrap(),
-            None => panic!("callee {} is undeclared", callee)
+            None => panic!("callee {} is undeclared", callee),
         };
         let fv_id = match func.cur_ver {
             Some(fv_id) => fv_id,
@@ -176,8 +176,8 @@ impl Inlining {
                 let inst_id = inst.id();
                 if call_edges.contains_key(&inst_id) {
                     let call_target = &call_edges.get(&inst_id).unwrap().0;
-                    if self.should_inline.contains_key(call_target) &&
-                        *self.should_inline.get(call_target).unwrap()
+                    if self.should_inline.contains_key(call_target)
+                        && *self.should_inline.get(call_target).unwrap()
                     {
                         trace!("inserting inlined function at {}", inst);
 
@@ -191,13 +191,11 @@ impl Inlining {
                         trace!("function being inlined is {}", inlined_func);
                         let inlined_fvid = match vm.get_cur_version_for_func(inlined_func) {
                             Some(fvid) => fvid,
-                            None => {
-                                panic!(
-                                    "cannot resolve current version of Func {}, \
-                                     which is supposed to be inlined",
-                                    inlined_func
-                                )
-                            }
+                            None => panic!(
+                                "cannot resolve current version of Func {}, \
+                                 which is supposed to be inlined",
+                                inlined_func
+                            ),
                         };
                         let inlined_fvs_guard = vm.func_vers().read().unwrap();
                         let inlined_fv_lock = inlined_fvs_guard.get(&inlined_fvid).unwrap();
@@ -235,8 +233,8 @@ impl Inlining {
                                         args: arg_indices
                                             .iter()
                                             .map(|x| DestArg::Normal(*x))
-                                            .collect()
-                                    })
+                                            .collect(),
+                                    }),
                                 });
                                 trace!("branch inst: {}", branch);
 
@@ -264,7 +262,7 @@ impl Inlining {
                                     },
                                     exn_arg: None,
                                     body: vec![],
-                                    keepalives: None
+                                    keepalives: None,
                                 });
 
                                 // deal with the inlined function
@@ -273,14 +271,14 @@ impl Inlining {
                                     cur_block.hdr.clone(),
                                     inlined_fv_content,
                                     new_inlined_entry_hdr,
-                                    vm
+                                    vm,
                                 );
                                 copy_inline_context(f_context, &inlined_fv_guard.context);
                             }
 
                             Instruction_::Call {
                                 ref data,
-                                ref resume
+                                ref resume,
                             } => {
                                 let arg_nodes: Vec<P<TreeNode>> =
                                     data.args.iter().map(|x| ops[*x].clone()).collect();
@@ -295,8 +293,8 @@ impl Inlining {
                                         args: arg_indices
                                             .iter()
                                             .map(|x| DestArg::Normal(*x))
-                                            .collect()
-                                    })
+                                            .collect(),
+                                    }),
                                 };
 
                                 // add branch to current block
@@ -313,15 +311,16 @@ impl Inlining {
                                 // if normal_dest expects different number of arguments
                                 // other than the inlined function returns, we need
                                 // an intermediate block to pass extra arguments
-                                if resume.normal_dest.args.len() !=
-                                    inlined_fv_guard.sig.ret_tys.len()
+                                if resume.normal_dest.args.len()
+                                    != inlined_fv_guard.sig.ret_tys.len()
                                 {
                                     debug!("need an extra block for passing normal dest arguments");
                                     let int_block_name =
                                         Arc::new(format!("inline_{}_arg_pass", inst_id));
-                                    let mut intermediate_block = Block::new(
-                                        MuEntityHeader::named(vm.next_id(), int_block_name)
-                                    );
+                                    let mut intermediate_block = Block::new(MuEntityHeader::named(
+                                        vm.next_id(),
+                                        int_block_name,
+                                    ));
 
                                     // branch to normal_dest with normal_dest arguments
                                     let normal_dest_args =
@@ -336,20 +335,20 @@ impl Inlining {
                                             target: resume.normal_dest.target.clone(),
                                             args: (0..normal_dest_args_len)
                                                 .map(|x| DestArg::Normal(x))
-                                                .collect()
-                                        })
+                                                .collect(),
+                                        }),
                                     };
 
                                     intermediate_block.content = Some(BlockContent {
                                         args: {
                                             match inst.value {
                                                 Some(ref vec) => vec.clone(),
-                                                None => vec![]
+                                                None => vec![],
                                             }
                                         },
                                         exn_arg: None,
                                         body: vec![TreeNode::new_inst(branch)],
-                                        keepalives: None
+                                        keepalives: None,
                                     });
 
                                     trace!("extra block: {:?}", intermediate_block);
@@ -364,12 +363,12 @@ impl Inlining {
                                     next_block.clone(),
                                     inlined_fv_guard.get_orig_ir().unwrap(),
                                     new_inlined_entry_hdr.clone(),
-                                    vm
+                                    vm,
                                 );
                                 copy_inline_context(f_context, &inlined_fv_guard.context);
                             }
 
-                            _ => panic!("unexpected callsite: {}", inst)
+                            _ => panic!("unexpected callsite: {}", inst),
                         }
                     } else {
                         cur_block.content.as_mut().unwrap().body.push(inst.clone());
@@ -393,7 +392,7 @@ fn new_inlined_block_name(old_block_name: MuName, vm: &VM) -> MuEntityHeader {
     let new_id = vm.next_id();
     MuEntityHeader::named(
         new_id,
-        Arc::new(format!("{}:inlinedblock.#{}", old_block_name, new_id))
+        Arc::new(format!("{}:inlinedblock.#{}", old_block_name, new_id)),
     )
 }
 /// copies blocks from callee to caller, with specified entry block and return block
@@ -402,7 +401,7 @@ fn copy_inline_blocks(
     ret_block: MuEntityHeader,
     callee: &FunctionContent,
     entry_block: MuEntityHeader,
-    vm: &VM
+    vm: &VM,
 ) {
     trace!("trying to copy inlined function blocks to caller");
 
@@ -417,18 +416,14 @@ fn copy_inline_blocks(
         }
     }
 
-    let fix_dest = |dest: Destination| {
-        Destination {
-            target: (*block_map.get(&dest.target.id()).unwrap()).clone(),
-            args: dest.args
-        }
+    let fix_dest = |dest: Destination| Destination {
+        target: (*block_map.get(&dest.target.id()).unwrap()).clone(),
+        args: dest.args,
     };
 
-    let fix_resume = |resume: ResumptionData| {
-        ResumptionData {
-            normal_dest: fix_dest(resume.normal_dest),
-            exn_dest: fix_dest(resume.exn_dest)
-        }
+    let fix_resume = |resume: ResumptionData| ResumptionData {
+        normal_dest: fix_dest(resume.normal_dest),
+        exn_dest: fix_dest(resume.exn_dest),
     };
 
     for old_block in callee.blocks.values() {
@@ -438,7 +433,7 @@ fn copy_inline_blocks(
             hdr: new_hdr.clone(),
             content: Some(old_block.content.as_ref().unwrap().clone_empty()),
             trace_hint: TraceHint::None,
-            control_flow: ControlFlow::default()
+            control_flow: ControlFlow::default(),
         };
 
         trace!("starts copying instruction from {} to {}", old_id, new_hdr);
@@ -454,7 +449,7 @@ fn copy_inline_blocks(
                     TreeNode_::Instruction(ref inst) => {
                         TreeNode::new_inst(inst.clone_with_id(vm.next_id()))
                     }
-                    _ => panic!("expect instruction as block body")
+                    _ => panic!("expect instruction as block body"),
                 });
             }
 
@@ -466,7 +461,7 @@ fn copy_inline_blocks(
                 TreeNode_::Instruction(ref inst) => {
                     TreeNode::new_inst(inst.clone_with_id(inst_new_id))
                 }
-                _ => panic!("expect instruction as block body")
+                _ => panic!("expect instruction as block body"),
             };
 
             match &last_inst.v {
@@ -487,8 +482,8 @@ fn copy_inline_blocks(
                                 ops: ops.clone(),
                                 v: Instruction_::Branch1(Destination {
                                     target: ret_block.clone(),
-                                    args: vec.iter().map(|x| DestArg::Normal(*x)).collect()
-                                })
+                                    args: vec.iter().map(|x| DestArg::Normal(*x)).collect(),
+                                }),
                             };
 
                             trace!("rewrite to: {}", branch);
@@ -501,7 +496,7 @@ fn copy_inline_blocks(
                                 hdr: hdr,
                                 value: value.clone(),
                                 ops: ops.clone(),
-                                v: Instruction_::Branch1(fix_dest(dest.clone()))
+                                v: Instruction_::Branch1(fix_dest(dest.clone())),
                             };
 
                             trace!("rewrite to: {}", branch);
@@ -511,7 +506,7 @@ fn copy_inline_blocks(
                             ref cond,
                             ref true_dest,
                             ref false_dest,
-                            ref true_prob
+                            ref true_prob,
                         } => {
                             let branch2 = Instruction {
                                 hdr: hdr,
@@ -521,8 +516,8 @@ fn copy_inline_blocks(
                                     cond: *cond,
                                     true_dest: fix_dest(true_dest.clone()),
                                     false_dest: fix_dest(false_dest.clone()),
-                                    true_prob: *true_prob
-                                }
+                                    true_prob: *true_prob,
+                                },
                             };
 
                             trace!("rewrite to: {}", branch2);
@@ -530,7 +525,7 @@ fn copy_inline_blocks(
                         }
                         &Instruction_::Call {
                             ref data,
-                            ref resume
+                            ref resume,
                         } => {
                             let call = Instruction {
                                 hdr: hdr,
@@ -538,8 +533,8 @@ fn copy_inline_blocks(
                                 ops: ops.clone(),
                                 v: Instruction_::Call {
                                     data: data.clone(),
-                                    resume: fix_resume(resume.clone())
-                                }
+                                    resume: fix_resume(resume.clone()),
+                                },
                             };
 
                             trace!("rewrite to: {}", call);
@@ -547,7 +542,7 @@ fn copy_inline_blocks(
                         }
                         &Instruction_::CCall {
                             ref data,
-                            ref resume
+                            ref resume,
                         } => {
                             let call = Instruction {
                                 hdr: hdr,
@@ -555,8 +550,8 @@ fn copy_inline_blocks(
                                 ops: ops.clone(),
                                 v: Instruction_::CCall {
                                     data: data.clone(),
-                                    resume: fix_resume(resume.clone())
-                                }
+                                    resume: fix_resume(resume.clone()),
+                                },
                             };
 
                             trace!("rewrite to: {}", call);
@@ -565,7 +560,7 @@ fn copy_inline_blocks(
                         &Instruction_::Switch {
                             ref cond,
                             ref default,
-                            ref branches
+                            ref branches,
                         } => {
                             let switch = Instruction {
                                 hdr: hdr,
@@ -579,8 +574,8 @@ fn copy_inline_blocks(
                                         .map(|&(ref op, ref dest)| {
                                             (op.clone(), fix_dest(dest.clone()))
                                         })
-                                        .collect()
-                                }
+                                        .collect(),
+                                },
                             };
 
                             trace!("rewrite to: {}", switch);
@@ -591,7 +586,7 @@ fn copy_inline_blocks(
                             stack,
                             is_exception,
                             ref args,
-                            ref resume
+                            ref resume,
                         } => {
                             let swapstack = Instruction {
                                 hdr: hdr,
@@ -601,16 +596,16 @@ fn copy_inline_blocks(
                                     stack: stack,
                                     is_exception: is_exception,
                                     args: args.clone(),
-                                    resume: fix_resume(resume.clone())
-                                }
+                                    resume: fix_resume(resume.clone()),
+                                },
                             };
 
                             trace!("rewrite to: {}", swapstack);
                             block_content.body.push(TreeNode::new_inst(swapstack));
                         }
-                        &Instruction_::Watchpoint { .. } |
-                        &Instruction_::WPBranch { .. } |
-                        &Instruction_::ExnInstruction { .. } => unimplemented!(),
+                        &Instruction_::Watchpoint { .. }
+                        | &Instruction_::WPBranch { .. }
+                        | &Instruction_::ExnInstruction { .. } => unimplemented!(),
 
                         _ => {
                             block_content.body.push(last_inst_clone);

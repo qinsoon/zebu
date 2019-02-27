@@ -14,15 +14,15 @@
 
 #![allow(dead_code)]
 
-use compiler::CompilerPass;
 use ast::ir::*;
-use vm::VM;
+use compiler::CompilerPass;
 use std::any::Any;
+use vm::VM;
 
-use std::path;
-use std::io::prelude::*;
 use std::fs::File;
-use vm::uir_output::{EMIT_MUIR, create_emit_directory};
+use std::io::prelude::*;
+use std::path;
+use vm::uir_output::{create_emit_directory, EMIT_MUIR};
 
 fn create_emit_file(name: String, vm: &VM) -> File {
     let mut file_path = path::PathBuf::new();
@@ -30,27 +30,25 @@ fn create_emit_file(name: String, vm: &VM) -> File {
     file_path.push(name);
 
     match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create emit file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create emit file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     }
 }
 
 pub struct DotGen {
     name: &'static str,
-    suffix: &'static str
+    suffix: &'static str,
 }
 
 impl DotGen {
     pub fn new(suffix: &'static str) -> DotGen {
         DotGen {
             name: "DotGen",
-            suffix: suffix
+            suffix: suffix,
         }
     }
 }
@@ -67,14 +65,12 @@ fn emit_muir_dot(suffix: &str, func: &MuFunctionVersion, vm: &VM) {
     file_path.push((*func_name).clone() + suffix + ".dot");
 
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldnt create muir dot {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldnt create muir dot {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
 
     emit_muir_dot_inner(&mut file, func_name.clone(), func.content.as_ref().unwrap());
@@ -83,8 +79,6 @@ fn emit_muir_dot(suffix: &str, func: &MuFunctionVersion, vm: &VM) {
 fn escape_string(s: String) -> String {
     s.replace("\"", "\\\"") // Replace " with \"
 }
-
-
 
 fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionContent) {
     use utils::vec_utils;
@@ -127,7 +121,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                 file,
                 "    {}\\l",
                 escape_string(format!("{}", inst.as_inst()))
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         // "];
@@ -155,7 +150,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             dest.target.id(),
                             vec_utils::as_str(&dest.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     Branch2 {
                         ref true_dest,
@@ -168,14 +164,16 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             true_dest.target.id(),
                             vec_utils::as_str(&true_dest.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                         writeln!(
                             file,
                             "BB{} -> BB{} [label = \"false: {}\"]",
                             cur_block,
                             false_dest.target.id(),
                             vec_utils::as_str(&false_dest.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     Switch {
                         ref default,
@@ -190,7 +188,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                                 dest.target.id(),
                                 ops[op],
                                 vec_utils::as_str(&dest.get_arguments(&ops))
-                            ).unwrap();
+                            )
+                            .unwrap();
                         }
 
                         writeln!(
@@ -199,12 +198,13 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             default.target.id(),
                             vec_utils::as_str(&default.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
-                    Call { ref resume, .. } |
-                    CCall { ref resume, .. } |
-                    SwapStackExc { ref resume, .. } |
-                    ExnInstruction { ref resume, .. } => {
+                    Call { ref resume, .. }
+                    | CCall { ref resume, .. }
+                    | SwapStackExc { ref resume, .. }
+                    | ExnInstruction { ref resume, .. } => {
                         let ref normal = resume.normal_dest;
                         let ref exn = resume.exn_dest;
 
@@ -214,7 +214,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             normal.target.id(),
                             vec_utils::as_str(&normal.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
 
                         writeln!(
                             file,
@@ -222,7 +223,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             exn.target.id(),
                             vec_utils::as_str(&exn.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     Watchpoint {
                         ref id,
@@ -241,9 +243,9 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                                 cur_block,
                                 disable_dest.target.id(),
                                 vec_utils::as_str(&disable_dest.get_arguments(&ops))
-                            ).unwrap();
+                            )
+                            .unwrap();
                         }
-
 
                         writeln!(
                             file,
@@ -251,7 +253,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             normal.target.id(),
                             vec_utils::as_str(&normal.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
 
                         writeln!(
                             file,
@@ -259,7 +262,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             exn.target.id(),
                             vec_utils::as_str(&exn.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     WPBranch {
                         ref disable_dest,
@@ -272,7 +276,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             disable_dest.target.id(),
                             vec_utils::as_str(&disable_dest.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
 
                         writeln!(
                             file,
@@ -280,7 +285,8 @@ fn emit_muir_dot_inner(file: &mut File, f_name: MuName, f_content: &FunctionCont
                             cur_block,
                             enable_dest.target.id(),
                             vec_utils::as_str(&enable_dest.get_arguments(&ops))
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     Return(_) | Throw(_) | ThreadExit | TailCall(_) | SwapStackKill { .. } => {}
 

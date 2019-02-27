@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ast::ir::*;
-use ast::ptr::*;
 use ast::inst::*;
+use ast::ir::*;
 use ast::op::*;
+use ast::ptr::*;
 use ast::types::*;
-use vm::VM;
 use compiler::CompilerPass;
+use runtime::entrypoints;
 use runtime::mm;
 use runtime::mm::*;
-use runtime::entrypoints;
 use runtime::thread;
-use utils::*;
-use utils::math;
 use std::any::Any;
+use utils::math;
+use utils::*;
+use vm::VM;
 
 pub struct InjectRuntime {
-    name: &'static str
+    name: &'static str,
 }
 
 impl InjectRuntime {
     pub fn new() -> InjectRuntime {
         InjectRuntime {
-            name: "Inject Runtime Code"
+            name: "Inject Runtime Code",
         }
     }
 }
@@ -90,7 +90,7 @@ impl CompilerPass for InjectRuntime {
                                 &mut cur_block,
                                 &mut new_blocks,
                                 func_context,
-                                vm
+                                vm,
                             );
 
                             // alloc_end as cur_block
@@ -102,7 +102,8 @@ impl CompilerPass for InjectRuntime {
                         }
                     }
                     Instruction_::NewHybrid(ref ty, len_index)
-                        if inst.ops[len_index].is_const_value() => {
+                        if inst.ops[len_index].is_const_value() =>
+                    {
                         let len = inst.ops[len_index].as_value().extract_int_const().unwrap();
 
                         let ty_info = vm.get_backend_type_info(ty.id());
@@ -118,7 +119,7 @@ impl CompilerPass for InjectRuntime {
                                 &mut cur_block,
                                 &mut new_blocks,
                                 func_context,
-                                vm
+                                vm,
                             );
 
                             // alloc_end as cur_block
@@ -155,7 +156,7 @@ fn gen_allocation_sequence(
     cur_block: &mut Block,
     new_blocks: &mut Vec<Block>,
     func_context: &mut FunctionContext,
-    vm: &VM
+    vm: &VM,
 ) -> Block {
     use runtime::mm::heap::immix::*;
 
@@ -169,7 +170,7 @@ fn gen_allocation_sequence(
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: Some(vec![tmp_tl.clone_value()]),
         ops: vec![],
-        v: Instruction_::GetVMThreadLocal
+        v: Instruction_::GetVMThreadLocal,
     }));
 
     // cursor_loc = SHIFTIREF tl CURSOR_OFFSET
@@ -191,8 +192,8 @@ fn gen_allocation_sequence(
         v: Instruction_::ShiftIRef {
             is_ptr: true,
             base: 0,
-            offset: 1
-        }
+            offset: 1,
+        },
     }));
 
     // cursor_loc_u64 = PTRCAST cursor_loc
@@ -205,8 +206,8 @@ fn gen_allocation_sequence(
             operation: ConvOp::PTRCAST,
             from_ty: UPTR_U8_TYPE.clone(),
             to_ty: UPTR_U64_TYPE.clone(),
-            operand: 0
-        }
+            operand: 0,
+        },
     }));
 
     // cursor = LOAD cursor_loc_u64
@@ -218,8 +219,8 @@ fn gen_allocation_sequence(
         v: Instruction_::Load {
             is_ptr: true,
             order: MemoryOrder::NotAtomic,
-            mem_loc: 0
-        }
+            mem_loc: 0,
+        },
     }));
 
     // align up the cursor: (cursor + align - 1) & !(align - 1)
@@ -231,7 +232,7 @@ fn gen_allocation_sequence(
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: Some(vec![tmp_cursor_t1.clone_value()]),
         ops: vec![tmp_cursor.clone(), tmp_align_minus_one.clone()],
-        v: Instruction_::BinOp(BinOp::Add, 0, 1)
+        v: Instruction_::BinOp(BinOp::Add, 0, 1),
     }));
 
     // start = cursor_t1 & !(align - 1)
@@ -242,7 +243,7 @@ fn gen_allocation_sequence(
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: Some(vec![tmp_start.clone_value()]),
         ops: vec![tmp_cursor_t1.clone(), tmp_not_align_minus_one],
-        v: Instruction_::BinOp(BinOp::And, 0, 1)
+        v: Instruction_::BinOp(BinOp::And, 0, 1),
     }));
 
     // end = start + size
@@ -252,7 +253,7 @@ fn gen_allocation_sequence(
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: Some(vec![tmp_end.clone_value()]),
         ops: vec![tmp_start.clone(), tmp_size.clone()],
-        v: Instruction_::BinOp(BinOp::Add, 0, 1)
+        v: Instruction_::BinOp(BinOp::Add, 0, 1),
     }));
 
     // limit_loc = SHIFTIREF tl LIMIT_OFFSET
@@ -274,8 +275,8 @@ fn gen_allocation_sequence(
         v: Instruction_::ShiftIRef {
             is_ptr: true,
             base: 0,
-            offset: 1
-        }
+            offset: 1,
+        },
     }));
 
     // limit_loc_u64 = PTRCAST limit_loc
@@ -288,8 +289,8 @@ fn gen_allocation_sequence(
             operation: ConvOp::PTRCAST,
             from_ty: UPTR_U8_TYPE.clone(),
             to_ty: UPTR_U64_TYPE.clone(),
-            operand: 0
-        }
+            operand: 0,
+        },
     }));
 
     // limit = LOAD limit_loc_u64
@@ -301,8 +302,8 @@ fn gen_allocation_sequence(
         v: Instruction_::Load {
             is_ptr: true,
             order: MemoryOrder::NotAtomic,
-            mem_loc: 0
-        }
+            mem_loc: 0,
+        },
     }));
 
     // exceed_limit = UGT tmp_end tmp_limit
@@ -311,7 +312,7 @@ fn gen_allocation_sequence(
         hdr: MuEntityHeader::unnamed(vm.next_id()),
         value: Some(vec![tmp_exceed_limit.clone_value()]),
         ops: vec![tmp_end.clone(), tmp_limit.clone()],
-        v: Instruction_::CmpOp(CmpOp::UGT, 0, 1)
+        v: Instruction_::CmpOp(CmpOp::UGT, 0, 1),
     }));
 
     // alloc_end
@@ -323,7 +324,7 @@ fn gen_allocation_sequence(
             args: vec![],
             exn_arg: None,
             body: vec![],
-            keepalives: None
+            keepalives: None,
         });
         block
     };
@@ -349,15 +350,15 @@ fn gen_allocation_sequence(
                         is_ptr: true,
                         order: MemoryOrder::NotAtomic,
                         mem_loc: 0,
-                        value: 1
-                    }
+                        value: 1,
+                    },
                 }),
                 // MOVE tmp_start -> tmp_res
                 TreeNode::new_inst(Instruction {
                     hdr: MuEntityHeader::unnamed(vm.next_id()),
                     value: Some(vec![tmp_res.clone()]),
                     ops: vec![tmp_start.clone()],
-                    v: Instruction_::Move(0)
+                    v: Instruction_::Move(0),
                 }),
                 // BRANCH alloc_end
                 TreeNode::new_inst(Instruction {
@@ -366,11 +367,11 @@ fn gen_allocation_sequence(
                     ops: vec![],
                     v: Instruction_::Branch1(Destination {
                         target: alloc_end.hdr.clone(),
-                        args: vec![]
-                    })
+                        args: vec![],
+                    }),
                 }),
             ],
-            keepalives: None
+            keepalives: None,
         });
         block
     };
@@ -397,9 +398,9 @@ fn gen_allocation_sequence(
                     hdr: MuEntityHeader::unnamed(vm.next_id()),
                     ty: P(MuType::new(
                         vm.next_id(),
-                        MuType_::UFuncPtr(func.sig.clone())
+                        MuType_::UFuncPtr(func.sig.clone()),
                     )),
-                    v: Value_::Constant(Constant::ExternSym(func.aot.to_relocatable()))
+                    v: Value_::Constant(Constant::ExternSym(func.aot.to_relocatable())),
                 }));
                 vec![
                     // tmp_mutator_loc = SHIFTIREF tmp_tl MUTATOR_OFFSET
@@ -408,15 +409,16 @@ fn gen_allocation_sequence(
                         value: Some(vec![tmp_mutator_loc.clone_value()]),
                         ops: vec![
                             tmp_tl.clone(),
-                            TreeNode::new_value(
-                                Value::make_int64_const(vm.next_id(), mutator_offset as u64)
-                            ),
+                            TreeNode::new_value(Value::make_int64_const(
+                                vm.next_id(),
+                                mutator_offset as u64,
+                            )),
                         ],
                         v: Instruction_::ShiftIRef {
                             is_ptr: true,
                             base: 0,
-                            offset: 1
-                        }
+                            offset: 1,
+                        },
                     }),
                     // CCALL alloc_slow(mutator, size, align)
                     TreeNode::new_inst(Instruction {
@@ -432,10 +434,10 @@ fn gen_allocation_sequence(
                             data: CallData {
                                 func: 0,
                                 args: vec![1, 2, 3],
-                                convention: C_CALL_CONVENTION
+                                convention: C_CALL_CONVENTION,
                             },
-                            is_abort: false
-                        }
+                            is_abort: false,
+                        },
                     }),
                     // BRANCH alloc_end
                     TreeNode::new_inst(Instruction {
@@ -444,12 +446,12 @@ fn gen_allocation_sequence(
                         ops: vec![],
                         v: Instruction_::Branch1(Destination {
                             target: alloc_end.hdr.clone(),
-                            args: vec![]
-                        })
+                            args: vec![],
+                        }),
                     }),
                 ]
             },
-            keepalives: None
+            keepalives: None,
         });
         block
     };
@@ -463,14 +465,14 @@ fn gen_allocation_sequence(
             cond: 0,
             true_dest: Destination {
                 target: slowpath.hdr.clone(),
-                args: vec![]
+                args: vec![],
             },
             false_dest: Destination {
                 target: fastpath.hdr.clone(),
-                args: vec![]
+                args: vec![],
             },
-            true_prob: 0.1f32
-        }
+            true_prob: 0.1f32,
+        },
     }));
 
     // put alloc_end, slowpath, fastpath to new blocks

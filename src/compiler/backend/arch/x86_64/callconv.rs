@@ -1,9 +1,9 @@
 use ast::ir::*;
 use ast::ptr::*;
 use ast::types::*;
-use compiler::backend::RegGroup;
 use compiler::backend::x86_64;
 use compiler::backend::BackendType;
+use compiler::backend::RegGroup;
 use utils::ByteSize;
 use vm::VM;
 
@@ -12,7 +12,7 @@ pub enum CallConvResult {
     GPR(P<Value>),
     GPREX(P<Value>, P<Value>),
     FPR(P<Value>),
-    STACK
+    STACK,
 }
 
 pub mod mu {
@@ -21,8 +21,8 @@ pub mod mu {
 
 pub mod swapstack {
     pub use super::c::compute_arguments;
-    pub use super::c::compute_stack_args;
     pub use super::c::compute_arguments as compute_return_values;
+    pub use super::c::compute_stack_args;
     pub use super::c::compute_stack_args as compute_stack_retvals;
 }
 
@@ -168,7 +168,7 @@ pub mod c {
     /// returns a tuple of (size, offset for each values on stack)
     pub fn compute_stack_locations(
         stack_val_tys: &Vec<P<MuType>>,
-        vm: &VM
+        vm: &VM,
     ) -> (ByteSize, Vec<ByteSize>) {
         let (stack_arg_size, _, stack_arg_offsets) =
             BackendType::sequential_layout(stack_val_tys, vm);

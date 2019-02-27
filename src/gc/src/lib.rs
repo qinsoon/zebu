@@ -74,21 +74,21 @@ extern crate mu_utils as utils;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate stderrlog;
 extern crate aligned_alloc;
 extern crate crossbeam;
+extern crate stderrlog;
 #[macro_use]
 extern crate field_offset;
 
 use common::objectdump;
 use common::ptr::*;
-use heap::immix::*;
 use heap::freelist::*;
+use heap::immix::*;
 use utils::*;
 
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::RwLock;
-use std::sync::atomic::Ordering;
 
 /// data structures for the GC and the user
 pub mod common;
@@ -99,10 +99,10 @@ pub mod common;
 //  FIXME: this mod can be private (we expose it only because tests are using it)
 //  we should consider moving those tests within the mod
 pub mod objectmodel;
-/// object header size (in byte)
-pub use objectmodel::OBJECT_HEADER_SIZE;
 /// offset from an object reference to the header (in byte, can be negative)
 pub use objectmodel::OBJECT_HEADER_OFFSET;
+/// object header size (in byte)
+pub use objectmodel::OBJECT_HEADER_SIZE;
 
 /// the main GC crate, heap structures (including collection, immix space, freelist space)
 //  FIXME: this mod can be private (we expose it only because tests are using it)
@@ -134,17 +134,18 @@ struct GC {
     immix_tiny: Raw<ImmixSpace>,
     immix_normal: Raw<ImmixSpace>,
     lo: Raw<FreelistSpace>,
-    roots: LinkedHashSet<ObjectReference>
+    roots: LinkedHashSet<ObjectReference>,
 }
 
 lazy_static! {
-    static ref MY_GC : RwLock<Option<GC>> = RwLock::new(None);
+    static ref MY_GC: RwLock<Option<GC>> = RwLock::new(None);
 }
 
 impl GC {
     pub fn is_heap_object(&self, addr: Address) -> bool {
-        self.immix_tiny.addr_in_space(addr) || self.immix_normal.addr_in_space(addr) ||
-            self.lo.addr_in_space(addr)
+        self.immix_tiny.addr_in_space(addr)
+            || self.immix_normal.addr_in_space(addr)
+            || self.lo.addr_in_space(addr)
     }
 }
 
@@ -155,7 +156,7 @@ pub struct GCConfig {
     pub immix_normal_size: ByteSize,
     pub lo_size: ByteSize,
     pub n_gcthreads: usize,
-    pub enable_gc: bool
+    pub enable_gc: bool,
 }
 
 //  the implementation of this GC will be changed dramatically in the future,
@@ -181,7 +182,7 @@ pub extern "C" fn gc_init(config: GCConfig) {
         immix_tiny,
         immix_normal,
         lo,
-        roots: LinkedHashSet::new()
+        roots: LinkedHashSet::new(),
     });
     heap::gc::ENABLE_GC.store(config.enable_gc, Ordering::Relaxed);
 
@@ -232,7 +233,7 @@ pub extern "C" fn new_mutator_ptr() -> *mut Mutator {
         ImmixAllocator::new(gc.immix_tiny.clone()),
         ImmixAllocator::new(gc.immix_normal.clone()),
         FreelistAllocator::new(gc.lo.clone()),
-        global
+        global,
     )));
 
     // allocators have a back pointer to the mutator
@@ -254,7 +255,7 @@ pub extern "C" fn new_mutator() -> Mutator {
         ImmixAllocator::new(gc.immix_tiny.clone()),
         ImmixAllocator::new(gc.immix_normal.clone()),
         FreelistAllocator::new(gc.lo.clone()),
-        global
+        global,
     )
 }
 
@@ -326,7 +327,7 @@ fn mutator_ref(m: *mut Mutator) -> &'static mut Mutator {
 pub extern "C" fn muentry_alloc_tiny(
     mutator: *mut Mutator,
     size: usize,
-    align: usize
+    align: usize,
 ) -> ObjectReference {
     let m = mutator_ref(mutator);
     unsafe { m.tiny.alloc(size, align).to_object_reference() }
@@ -336,7 +337,7 @@ pub extern "C" fn muentry_alloc_tiny(
 pub extern "C" fn muentry_alloc_normal(
     mutator: *mut Mutator,
     size: usize,
-    align: usize
+    align: usize,
 ) -> ObjectReference {
     let m = mutator_ref(mutator);
     let res = m.normal.alloc(size, align);
@@ -350,7 +351,7 @@ pub extern "C" fn muentry_alloc_normal(
 pub extern "C" fn muentry_alloc_tiny_slow(
     mutator: *mut Mutator,
     size: usize,
-    align: usize
+    align: usize,
 ) -> Address {
     let m = mutator_ref(mutator);
     m.tiny.alloc_slow(size, align)
@@ -362,7 +363,7 @@ pub extern "C" fn muentry_alloc_tiny_slow(
 pub extern "C" fn muentry_alloc_normal_slow(
     mutator: *mut Mutator,
     size: usize,
-    align: usize
+    align: usize,
 ) -> Address {
     let m = mutator_ref(mutator);
     let res = m.normal.alloc_slow(size, align);
@@ -376,7 +377,7 @@ pub extern "C" fn muentry_alloc_normal_slow(
 pub extern "C" fn muentry_alloc_large(
     mutator: *mut Mutator,
     size: usize,
-    align: usize
+    align: usize,
 ) -> ObjectReference {
     let m = mutator_ref(mutator);
     let res = m.lo.alloc(size, align);
@@ -388,7 +389,7 @@ pub extern "C" fn muentry_alloc_large(
 pub extern "C" fn muentry_init_tiny_object(
     mutator: *mut Mutator,
     obj: ObjectReference,
-    encode: TinyObjectEncode
+    encode: TinyObjectEncode,
 ) {
     unsafe { &mut *mutator }
         .tiny
@@ -400,7 +401,7 @@ pub extern "C" fn muentry_init_tiny_object(
 pub extern "C" fn muentry_init_small_object(
     mutator: *mut Mutator,
     obj: ObjectReference,
-    encode: SmallObjectEncode
+    encode: SmallObjectEncode,
 ) {
     unsafe { &mut *mutator }
         .normal
@@ -412,7 +413,7 @@ pub extern "C" fn muentry_init_small_object(
 pub extern "C" fn muentry_init_medium_object(
     mutator: *mut Mutator,
     obj: ObjectReference,
-    encode: MediumObjectEncode
+    encode: MediumObjectEncode,
 ) {
     unsafe { &mut *mutator }
         .normal
@@ -423,7 +424,7 @@ pub extern "C" fn muentry_init_medium_object(
 pub extern "C" fn muentry_init_large_object(
     mutator: *mut Mutator,
     obj: ObjectReference,
-    encode: LargeObjectEncode
+    encode: LargeObjectEncode,
 ) {
     unsafe { &mut *mutator }
         .lo
@@ -470,12 +471,10 @@ pub extern "C" fn get_space_freelist() -> Raw<FreelistSpace> {
 
 pub fn start_logging_trace() {
     match stderrlog::new().verbosity(4).init() {
-        Ok(()) => { info!("logger initialized") }
-        Err(e) => {
-            error!(
-                "failed to init logger, probably already initialized: {:?}",
-                e
-            )
-        }
+        Ok(()) => info!("logger initialized"),
+        Err(e) => error!(
+            "failed to init logger, probably already initialized: {:?}",
+            e
+        ),
     }
 }

@@ -1430,11 +1430,11 @@ impl ASMCodeGen {
         match op.v {
             // offset(base,index,scale)
             Value_::Memory(MemoryLocation::Address {
-                               ref base,
-                               ref offset,
-                               ref index,
-                               scale,
-                           }) => {
+                ref base,
+                ref offset,
+                ref index,
+                scale,
+            }) => {
                 // deal with offset
                 if offset.is_some() {
                     let offset = offset.as_ref().unwrap();
@@ -1511,11 +1511,11 @@ impl ASMCodeGen {
                 loc_cursor += 1;
             }
             Value_::Memory(MemoryLocation::Symbolic {
-                               ref base,
-                               ref label,
-                               is_global,
-                               is_native,
-                           }) => {
+                ref base,
+                ref label,
+                is_global,
+                is_native,
+            }) => {
                 let label = if is_native {
                     "/*C*/".to_string() + label.as_str()
                 } else {
@@ -4094,7 +4094,7 @@ pub fn emit_context_with_reloc(
                         "\t{}",
                         directive_equiv(demangled_name, global_cell_name.clone())
                     )
-                        .unwrap();
+                    .unwrap();
                 }
             }
 
@@ -4143,7 +4143,7 @@ pub fn emit_context_with_reloc(
                         "\t.quad {}\n",
                         symbol(&mangle_name(label.clone()))
                     ))
-                        .unwrap();
+                    .unwrap();
                 } else {
                     // otherwise this offset is plain data
 

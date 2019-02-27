@@ -171,8 +171,8 @@ fn link_executable_internal(
             } else {
                 "./target/release/deps"
             })
-                .to_str()
-                .unwrap()
+            .to_str()
+            .unwrap()
         ));
         cc.arg("-lmu");
     }

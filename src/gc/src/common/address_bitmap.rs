@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::LOG_POINTER_SIZE;
-use utils::Address;
 use common::bitmap::Bitmap;
+use utils::Address;
+use utils::LOG_POINTER_SIZE;
 
 #[derive(Clone)]
 pub struct AddressBitmap {
     start: Address,
     end: Address,
 
-    bitmap: Bitmap
+    bitmap: Bitmap,
 }
 
 impl AddressBitmap {
@@ -32,7 +32,7 @@ impl AddressBitmap {
         AddressBitmap {
             start: start,
             end: end,
-            bitmap: bitmap
+            bitmap: bitmap,
         }
     }
 

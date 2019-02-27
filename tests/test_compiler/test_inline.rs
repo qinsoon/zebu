@@ -14,13 +14,13 @@
 
 extern crate libloading;
 
-use mu::ast::types::*;
-use mu::ast::ir::*;
 use mu::ast::inst::*;
+use mu::ast::ir::*;
 use mu::ast::op::*;
-use mu::vm::*;
+use mu::ast::types::*;
 use mu::linkutils;
 use mu::utils::LinkedHashMap;
+use mu::vm::*;
 
 #[test]
 fn test_inline_add_simple() {
@@ -187,7 +187,7 @@ fn test_inline_add_with_extra_norm_args() {
     let lib = linkutils::aot::compile_fncs(
         "inline_add_with_extra_norm_args",
         vec!["add_with_extra_norm_args", "add"],
-        &inline_add_with_extra_norm_args
+        &inline_add_with_extra_norm_args,
     );
 
     unsafe {

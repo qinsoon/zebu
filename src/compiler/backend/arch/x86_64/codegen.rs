@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ast::ptr::P;
 use ast::ir::*;
+use ast::ptr::P;
 use runtime::ValueLocation;
 
+use compiler::backend::{Mem, Reg};
 use compiler::machine_code::MachineCode;
-use compiler::backend::{Reg, Mem};
 
 /// CodeGenerator provides an interface to emit x86_64 code for instruction selection.
 /// This allows us to implement the other parts of the compiler (mostly instruction selection)
@@ -81,8 +81,8 @@ pub trait CodeGenerator {
     fn emit_mov_r_mem(&mut self, dest: Reg, src: Mem); // load
     fn emit_mov_r_r(&mut self, dest: Reg, src: Reg);
     fn emit_mov_mem_r(&mut self, dest: Mem, src: Reg); // store
-    // we can infer imm length from Reg, but cannot from Mem
-    // because mem may only have type as ADDRESS_TYPE
+                                                       // we can infer imm length from Reg, but cannot from Mem
+                                                       // because mem may only have type as ADDRESS_TYPE
     fn emit_mov_mem_imm(&mut self, dest: Mem, src: i32, oplen: usize); // store
 
     fn emit_mov_mem_r_callee_saved(&mut self, dest: Mem, src: Reg); // store callee saved register
@@ -238,7 +238,7 @@ pub trait CodeGenerator {
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
         defs: Vec<P<Value>>,
-        is_native: bool
+        is_native: bool,
     ) -> ValueLocation;
     fn emit_call_near_r64(
         &mut self,
@@ -246,7 +246,7 @@ pub trait CodeGenerator {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation;
     fn emit_call_near_mem64(
         &mut self,
@@ -254,7 +254,7 @@ pub trait CodeGenerator {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation;
 
     // sometimes we use jmp as a call (but without pushing return address)
@@ -265,7 +265,7 @@ pub trait CodeGenerator {
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
         defs: Vec<P<Value>>,
-        is_native: bool
+        is_native: bool,
     ) -> ValueLocation;
     fn emit_call_jmp_indirect(
         &mut self,
@@ -273,7 +273,7 @@ pub trait CodeGenerator {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation;
 
     fn emit_ret(&mut self);

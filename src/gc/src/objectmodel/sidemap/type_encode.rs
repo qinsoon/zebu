@@ -23,7 +23,7 @@ pub enum WordType {
     NonRef = 0,
     Ref = 1,
     WeakRef = 2,
-    TaggedRef = 3
+    TaggedRef = 3,
 }
 
 rodal_enum!(WordType {
@@ -36,7 +36,7 @@ rodal_enum!(WordType {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum TypeEncode {
     Short(ShortTypeEncode),
-    Full(FullTypeEncode)
+    Full(FullTypeEncode),
 }
 
 rodal_enum!(TypeEncode{(Short: short_enc), (Full: full_enc)});
@@ -100,13 +100,13 @@ impl TypeEncode {
     pub fn as_short(&self) -> &ShortTypeEncode {
         match self {
             &TypeEncode::Short(ref enc) => enc,
-            &TypeEncode::Full(_) => panic!("trying to cast TypeEncode as ShortTypeEncode")
+            &TypeEncode::Full(_) => panic!("trying to cast TypeEncode as ShortTypeEncode"),
         }
     }
     pub fn as_full(&self) -> &FullTypeEncode {
         match self {
             &TypeEncode::Short(_) => panic!("trying to cast TypeEncode to FullTypeEncode"),
-            &TypeEncode::Full(ref enc) => enc
+            &TypeEncode::Full(ref enc) => enc,
         }
     }
 }
@@ -115,7 +115,7 @@ impl TypeEncode {
 pub struct FullTypeEncode {
     pub align: ByteSize,
     pub fix: Vec<WordType>,
-    pub var: Vec<WordType>
+    pub var: Vec<WordType>,
 }
 
 rodal_struct!(FullTypeEncode { align, fix, var });
@@ -133,10 +133,16 @@ pub struct ShortTypeEncode {
     /// how many words in var part of the type
     var_len: u8,
     /// types for each word
-    var_ty: [u8; 63]
+    var_ty: [u8; 63],
 }
 
-rodal_struct!(ShortTypeEncode { align, fix_len, fix_ty, var_len, var_ty });
+rodal_struct!(ShortTypeEncode {
+    align,
+    fix_len,
+    fix_ty,
+    var_len,
+    var_ty
+});
 
 // manually implement clone as [u8;63] does not have clone trait
 // (rust std doesnt implement all array sizes with clone)
@@ -147,7 +153,7 @@ impl Clone for ShortTypeEncode {
             fix_len: self.fix_len,
             fix_ty: self.fix_ty,
             var_len: self.var_len,
-            var_ty: self.var_ty
+            var_ty: self.var_ty,
         }
     }
 }
@@ -208,14 +214,14 @@ impl ShortTypeEncode {
         fix_len: u8,
         fix_ty: [u8; 63],
         var_len: u8,
-        var_ty: [u8; 63]
+        var_ty: [u8; 63],
     ) -> ShortTypeEncode {
         ShortTypeEncode {
             align,
             fix_len,
             fix_ty,
             var_len,
-            var_ty
+            var_ty,
         }
     }
     fn empty() -> ShortTypeEncode {
@@ -224,7 +230,7 @@ impl ShortTypeEncode {
             fix_len: 0,
             fix_ty: [0; 63],
             var_len: 0,
-            var_ty: [0; 63]
+            var_ty: [0; 63],
         }
     }
     #[inline(always)]
@@ -287,7 +293,7 @@ mod type_encoding {
             fix_len: 12,
             fix_ty: [0; 63],
             var_len: 8,
-            var_ty: [0; 63]
+            var_ty: [0; 63],
         };
         ret.fix_ty[0] = 0b11100100u8;
         ret.fix_ty[1] = 0b00011011u8;

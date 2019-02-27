@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::*;
 use heap::*;
+use utils::*;
 
-mod immix_space;
 mod immix_mutator;
+mod immix_space;
 
-pub use self::immix_space::ImmixSpace;
-pub use self::immix_space::ImmixBlock;
 pub use self::immix_mutator::ImmixAllocator;
 pub use self::immix_mutator::CURSOR_OFFSET;
 pub use self::immix_mutator::LIMIT_OFFSET;
+pub use self::immix_space::ImmixBlock;
+pub use self::immix_space::ImmixSpace;
 
 // Immix space
 // |------------------| <- 16GB align
@@ -91,7 +91,7 @@ pub enum LineMark {
     Live,
     FreshAlloc,
     ConservLive,
-    PrevLive
+    PrevLive,
 }
 
 #[repr(u8)]
@@ -99,5 +99,5 @@ pub enum LineMark {
 pub enum BlockMark {
     Uninitialized = 0,
     Usable,
-    Full
+    Full,
 }

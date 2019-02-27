@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::RwLock;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
 use std::mem;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::RwLock;
 use utils::mem::*;
 use utils::*;
 
+use objectmodel::sidemap::object_encode::SMALL_ID_WIDTH;
+use objectmodel::sidemap::type_encode::*;
 use objectmodel::sidemap::TypeID;
 use objectmodel::sidemap::N_TYPES;
-use objectmodel::sidemap::type_encode::*;
-use objectmodel::sidemap::object_encode::SMALL_ID_WIDTH;
 
 /// represents a chunk of memory as global type table, which contains some metadata for the
 /// type table and all the type encoding entries.
@@ -40,7 +40,7 @@ pub struct GlobalTypeTable {
     mmap_start: Address,
     mmap_size: ByteSize,
 
-    table: [ShortTypeEncode; N_TYPES]
+    table: [ShortTypeEncode; N_TYPES],
 }
 
 const SMALL_ENTRY_CAP: usize = 1 << SMALL_ID_WIDTH;
@@ -78,7 +78,7 @@ impl GlobalTypeTable {
             use std::ptr;
             ptr::write(
                 &mut meta.full_entries as *mut RwLock<HashMap<usize, FullTypeEncode>>,
-                RwLock::new(HashMap::new())
+                RwLock::new(HashMap::new()),
             )
         }
         meta.mmap_start = mmap;

@@ -12,45 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use objectmodel::sidemap::TypeID;
 use objectmodel::sidemap::type_encode::WordType;
+use objectmodel::sidemap::TypeID;
 
-use utils::*;
+use std::fmt;
 use std::mem::size_of;
 use std::mem::transmute;
-use std::fmt;
+use utils::*;
 
 #[derive(Copy, Clone)]
 pub enum ObjectEncode {
     Tiny(TinyObjectEncode),
     Small(SmallObjectEncode),
     Medium(MediumObjectEncode),
-    Large(LargeObjectEncode)
+    Large(LargeObjectEncode),
 }
 
 impl ObjectEncode {
     pub fn tiny(self) -> TinyObjectEncode {
         match self {
             ObjectEncode::Tiny(enc) => enc,
-            _ => panic!()
+            _ => panic!(),
         }
     }
     pub fn small(self) -> SmallObjectEncode {
         match self {
             ObjectEncode::Small(enc) => enc,
-            _ => panic!()
+            _ => panic!(),
         }
     }
     pub fn medium(self) -> MediumObjectEncode {
         match self {
             ObjectEncode::Medium(enc) => enc,
-            _ => panic!()
+            _ => panic!(),
         }
     }
     pub fn large(self) -> LargeObjectEncode {
         match self {
             ObjectEncode::Large(enc) => enc,
-            _ => panic!()
+            _ => panic!(),
         }
     }
     pub fn as_raw(&self) -> [u64; 3] {
@@ -87,7 +87,7 @@ pub const MAX_MEDIUM_OBJECT: ByteSize = 2040; // < 2048
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct TinyObjectEncode {
-    b: u8
+    b: u8,
 }
 impl TinyObjectEncode {
     pub fn new(b: u8) -> TinyObjectEncode {
@@ -193,7 +193,7 @@ mod tiny_object_encoding {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SmallObjectEncode {
-    w: u16
+    w: u16,
 }
 
 pub const SMALL_ID_WIDTH: usize = 13;
@@ -204,7 +204,7 @@ impl SmallObjectEncode {
     }
     pub fn create(size: ByteSize, type_id: TypeID) -> SmallObjectEncode {
         let mut enc = SmallObjectEncode {
-            w: 0b1000_0000_0000_0000u16
+            w: 0b1000_0000_0000_0000u16,
         };
         enc.set_size(size);
         enc.set_type_id(type_id);
@@ -255,16 +255,16 @@ mod small_object_encoding {
         assert_eq!(size_of::<SmallObjectEncode>(), 2);
     }
     const ENCODE1: SmallObjectEncode = SmallObjectEncode {
-        w: 0b1000000000000001u16
+        w: 0b1000000000000001u16,
     };
     const ENCODE2: SmallObjectEncode = SmallObjectEncode {
-        w: 0b1011000000000000u16
+        w: 0b1011000000000000u16,
     };
     const ENCODE3: SmallObjectEncode = SmallObjectEncode {
-        w: 0b1111000000000001u16
+        w: 0b1111000000000001u16,
     };
     const ENCODE4: SmallObjectEncode = SmallObjectEncode {
-        w: 0b0101010101110101u16
+        w: 0b0101010101110101u16,
     };
     #[test]
     fn create() {
@@ -310,7 +310,7 @@ mod small_object_encoding {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct MediumObjectEncode {
-    d: u32
+    d: u32,
 }
 
 impl MediumObjectEncode {
@@ -368,16 +368,16 @@ mod medium_object_encoding {
         assert_eq!(size_of::<MediumObjectEncode>(), 4);
     }
     const ENCODE1: MediumObjectEncode = MediumObjectEncode {
-        d: 0b0000_0000_0000_0000_0000_0000_0000_0000u32
+        d: 0b0000_0000_0000_0000_0000_0000_0000_0000u32,
     };
     const ENCODE2: MediumObjectEncode = MediumObjectEncode {
-        d: 0b0100_0000_0000_0000_0000_0001_1000_0000u32
+        d: 0b0100_0000_0000_0000_0000_0001_1000_0000u32,
     };
     const ENCODE3: MediumObjectEncode = MediumObjectEncode {
-        d: 0b0111_1111_1111_1111_1111_1111_1111_1101u32
+        d: 0b0111_1111_1111_1111_1111_1111_1111_1101u32,
     };
     const ENCODE4: MediumObjectEncode = MediumObjectEncode {
-        d: 0b1100_0000_0000_0000_0000_0001_1111_1111u32
+        d: 0b1100_0000_0000_0000_0000_0001_1111_1111u32,
     };
     #[test]
     fn create() {
@@ -414,7 +414,7 @@ mod medium_object_encoding {
 #[derive(Copy, Clone, Debug)]
 pub struct LargeObjectEncode {
     size: usize,
-    tyid: usize
+    tyid: usize,
 }
 
 impl LargeObjectEncode {

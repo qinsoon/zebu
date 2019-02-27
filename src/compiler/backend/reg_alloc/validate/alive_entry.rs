@@ -14,11 +14,11 @@
 
 #![allow(dead_code)]
 
-use utils::LinkedHashMap;
-use utils::vec_utils;
 use ast::ir::*;
 use ast::ptr::*;
 use std::fmt;
+use utils::vec_utils;
+use utils::LinkedHashMap;
 
 type EntryID = usize;
 
@@ -26,7 +26,7 @@ type EntryID = usize;
 pub struct AliveEntries {
     index: EntryID,
 
-    inner: LinkedHashMap<EntryID, RegisterEntry>
+    inner: LinkedHashMap<EntryID, RegisterEntry>,
 }
 
 impl fmt::Display for AliveEntries {
@@ -35,10 +35,9 @@ impl fmt::Display for AliveEntries {
         writeln!(
             f,
             "| {:20} | {:20} | {:20} |",
-            "ssa",
-            "registers",
-            "stack slots"
-        ).unwrap();
+            "ssa", "registers", "stack slots"
+        )
+        .unwrap();
         for entry in self.inner.values() {
             writeln!(f, "{}", entry).unwrap()
         }
@@ -51,7 +50,7 @@ impl AliveEntries {
     pub fn new() -> AliveEntries {
         AliveEntries {
             index: 0,
-            inner: LinkedHashMap::new()
+            inner: LinkedHashMap::new(),
         }
     }
 
@@ -144,7 +143,6 @@ impl AliveEntries {
         ret
     }
 
-
     pub fn new_alive_reg(&mut self, reg: MuID) {
         debug!("adding alive reg: {}", reg);
 
@@ -152,7 +150,7 @@ impl AliveEntries {
         let entry = RegisterEntry {
             temp: None,
             real: vec![reg],
-            stack: vec![]
+            stack: vec![],
         };
 
         self.inner.insert(id, entry);
@@ -165,7 +163,7 @@ impl AliveEntries {
         let entry = RegisterEntry {
             temp: None,
             real: vec![],
-            stack: vec![mem]
+            stack: vec![mem],
         };
 
         self.inner.insert(id, entry);
@@ -186,7 +184,7 @@ impl AliveEntries {
             let entry = RegisterEntry {
                 temp: Some(temp),
                 real: vec![reg],
-                stack: vec![]
+                stack: vec![],
             };
 
             self.inner.insert(id, entry);
@@ -208,7 +206,7 @@ impl AliveEntries {
             let entry = RegisterEntry {
                 temp: Some(temp),
                 real: vec![],
-                stack: vec![mem]
+                stack: vec![mem],
             };
 
             self.inner.insert(id, entry);
@@ -321,7 +319,7 @@ impl AliveEntries {
 pub struct RegisterEntry {
     temp: Option<MuID>,
     real: Vec<MuID>,
-    stack: Vec<P<Value>>
+    stack: Vec<P<Value>>,
 }
 
 impl RegisterEntry {
@@ -389,9 +387,10 @@ impl RegisterEntry {
     // two entries can intersect only when they have the same temp, or they do not have temps
     pub fn intersect(&mut self, another: &Self) -> bool {
         assert!(
-            (!self.has_temp() && !another.has_temp() ||
-                 (self.has_temp() && another.has_temp() &&
-                      self.get_temp().unwrap() == another.get_temp().unwrap()))
+            (!self.has_temp() && !another.has_temp()
+                || (self.has_temp()
+                    && another.has_temp()
+                    && self.get_temp().unwrap() == another.get_temp().unwrap()))
         );
 
         let mut changed = false;
@@ -414,7 +413,7 @@ impl fmt::Display for RegisterEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let temp = match self.temp {
             Some(id) => format!("{}", id),
-            None => "_".to_string()
+            None => "_".to_string(),
         };
 
         let real = format!("{:?}", self.real);

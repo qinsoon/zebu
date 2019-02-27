@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compiler::CompilerPass;
 use ast::ir::*;
-use vm::VM;
 use compiler::machine_code::*;
+use compiler::CompilerPass;
 use utils::LinkedHashMap;
 use utils::LinkedHashSet;
 use utils::LinkedMultiMap;
 use utils::LinkedRepeatableMultiMap;
 use utils::Tree;
+use vm::VM;
 
 use std::any::Any;
 
 const TRACE_LOOPANALYSIS: bool = true;
 
 pub struct MCLoopAnalysis {
-    name: &'static str
+    name: &'static str,
 }
 
 impl CompilerPass for MCLoopAnalysis {
@@ -77,7 +77,7 @@ impl CompilerPass for MCLoopAnalysis {
             domtree,
             loops,
             loop_nest_tree,
-            loop_depth
+            loop_depth,
         });
 
         cf.loop_analysis = Some(result);
@@ -89,13 +89,13 @@ pub struct MCLoopAnalysisResult {
     pub domtree: MCDomTree,
     pub loops: LinkedRepeatableMultiMap<MuName, MCNaturalLoop>,
     pub loop_nest_tree: MCLoopNestTree,
-    pub loop_depth: LinkedHashMap<MuName, usize>
+    pub loop_depth: LinkedHashMap<MuName, usize>,
 }
 
 impl MCLoopAnalysis {
     pub fn new() -> MCLoopAnalysis {
         MCLoopAnalysis {
-            name: "Machine Code Loop Analysis"
+            name: "Machine Code Loop Analysis",
         }
     }
 }
@@ -161,8 +161,9 @@ fn compute_dominators(func: &CompiledFunction, cfg: &MachineCFG) -> LinkedMultiM
     dominators
 }
 
-fn compute_immediate_dominators(dominators: &LinkedMultiMap<MuName, MuName>)
-    -> LinkedHashMap<MuName, MuName> {
+fn compute_immediate_dominators(
+    dominators: &LinkedMultiMap<MuName, MuName>,
+) -> LinkedHashMap<MuName, MuName> {
     let mut immediate_doms: LinkedHashMap<MuName, MuName> = LinkedHashMap::new();
 
     for (n, doms) in dominators.iter() {
@@ -241,14 +242,14 @@ fn compute_domtree(entry: MuName, idoms: &LinkedHashMap<MuName, MuName>) -> MCDo
 pub struct MCNaturalLoop {
     header: MuName,
     backedge: MuName,
-    blocks: LinkedHashSet<MuName>
+    blocks: LinkedHashSet<MuName>,
 }
 
 /// returns a set of lists, which contains blocks in the loop
 /// the first element in the list is the block header
 fn compute_loops(
     domtree: &MCDomTree,
-    cfg: &MachineCFG
+    cfg: &MachineCFG,
 ) -> LinkedRepeatableMultiMap<MuName, MCNaturalLoop> {
     let mut ret = LinkedRepeatableMultiMap::new();
     let mut work_list = vec![domtree.root()];
@@ -269,7 +270,7 @@ fn compute_loops(
 fn identify_loop(
     header: &MuName,
     domtree: &MCDomTree,
-    cfg: &MachineCFG
+    cfg: &MachineCFG,
 ) -> Option<Vec<MCNaturalLoop>> {
     trace_if!(TRACE_LOOPANALYSIS, "find loop with header {}", header);
     let descendants = domtree.get_all_descendants(header);
@@ -293,7 +294,7 @@ fn identify_single_loop(
     header: &MuName,
     backedge: &MuName,
     nodes: &LinkedHashSet<MuName>,
-    cfg: &MachineCFG
+    cfg: &MachineCFG,
 ) -> MCNaturalLoop {
     trace_if!(
         TRACE_LOOPANALYSIS,
@@ -314,7 +315,7 @@ fn identify_single_loop(
     MCNaturalLoop {
         header: header.clone(),
         backedge: backedge.clone(),
-        blocks: loop_blocks
+        blocks: loop_blocks,
     }
 }
 
@@ -322,17 +323,18 @@ fn identify_single_loop(
 struct MCMergedLoop {
     header: MuName,
     backedges: LinkedHashSet<MuName>,
-    blocks: LinkedHashSet<MuName>
+    blocks: LinkedHashSet<MuName>,
 }
 
-fn compute_merged_loop(loops: &LinkedRepeatableMultiMap<MuName, MCNaturalLoop>)
-    -> LinkedHashMap<MuName, MCMergedLoop> {
+fn compute_merged_loop(
+    loops: &LinkedRepeatableMultiMap<MuName, MCNaturalLoop>,
+) -> LinkedHashMap<MuName, MCMergedLoop> {
     let mut merged_loops = LinkedHashMap::new();
     for (header, natural_loops) in loops.iter() {
         let mut merged_loop = MCMergedLoop {
             header: header.clone(),
             backedges: LinkedHashSet::new(),
-            blocks: LinkedHashSet::new()
+            blocks: LinkedHashSet::new(),
         };
         for l in natural_loops.iter() {
             merged_loop.backedges.insert(l.backedge.clone());
@@ -347,7 +349,7 @@ type MCLoopNestTree = Tree<MuName>;
 
 fn compute_loop_nest_tree(
     root: MuName,
-    merged_loops: &LinkedHashMap<MuName, MCMergedLoop>
+    merged_loops: &LinkedHashMap<MuName, MCMergedLoop>,
 ) -> MCLoopNestTree {
     trace_if!(TRACE_LOOPANALYSIS, "compute loop-nest tree");
     let mut loop_nest_tree = Tree::new(root.clone());
@@ -385,7 +387,7 @@ fn compute_loop_nest_tree(
 
 fn compute_loop_depth(
     tree: &MCLoopNestTree,
-    merged_loops: &LinkedHashMap<MuName, MCMergedLoop>
+    merged_loops: &LinkedHashMap<MuName, MCMergedLoop>,
 ) -> LinkedHashMap<MuName, usize> {
     trace_if!(TRACE_LOOPANALYSIS, "compute loop depth");
     let mut ret = LinkedHashMap::new();
@@ -398,7 +400,7 @@ fn record_depth(
     node: &MuName,
     tree: &MCLoopNestTree,
     merged_loops: &LinkedHashMap<MuName, MCMergedLoop>,
-    map: &mut LinkedHashMap<MuName, usize>
+    map: &mut LinkedHashMap<MuName, usize>,
 ) {
     // insert the header with the deapth
     trace_if!(TRACE_LOOPANALYSIS, "Header {} = Depth {}", node, depth);

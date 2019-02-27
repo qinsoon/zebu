@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate log;
 extern crate libloading;
+extern crate log;
 extern crate mu;
 
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
-use self::mu::vm::*;
+use self::mu::ast::ir::*;
+use self::mu::ast::types::*;
 use self::mu::compiler::*;
 use self::mu::runtime::thread::MuThread;
 use self::mu::utils::Address;
 use self::mu::utils::LinkedHashMap;
+use self::mu::vm::*;
 
-use std::sync::Arc;
 use self::mu::linkutils;
 use self::mu::linkutils::aot;
+use std::sync::Arc;
 
 #[test]
 fn test_allocation_fastpath() {
@@ -90,7 +90,7 @@ fn allocation_fastpath() -> VM {
 
 #[test]
 fn test_instruction_new() {
-    build_and_run_test! (alloc_new, alloc_new_test1);
+    build_and_run_test!(alloc_new, alloc_new_test1);
 }
 
 #[allow(dead_code)]

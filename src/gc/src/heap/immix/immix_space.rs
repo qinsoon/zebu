@@ -13,17 +13,17 @@
 // limitations under the License.
 
 use common::ptr::*;
-use heap::*;
-use heap::immix::*;
 use heap::gc;
+use heap::immix::*;
+use heap::*;
 use objectmodel::*;
 use utils::bit_utils;
-use utils::mem::*;
 use utils::mem::memsec;
+use utils::mem::*;
 
-use std::*;
 use std::collections::LinkedList;
 use std::sync::Mutex;
+use std::*;
 
 const TRACE_ALLOC: bool = true;
 
@@ -93,7 +93,7 @@ pub struct ImmixSpace {
     type_byte_table: [u8; WORDS_IN_SPACE >> 1],
 
     // memory starts here
-    mem: [u8; 0]
+    mem: [u8; 0],
 }
 
 impl RawMemoryMetadata for ImmixSpace {
@@ -178,8 +178,8 @@ impl Space for ImmixSpace {
                 // (not zeroing the memory yet)
 
                 for i in line_index..(line_index + LINES_IN_BLOCK) {
-                    if self.line_mark_table[i] != LineMark::Live &&
-                        self.line_mark_table[i] != LineMark::ConservLive
+                    if self.line_mark_table[i] != LineMark::Live
+                        && self.line_mark_table[i] != LineMark::ConservLive
                     {
                         has_free_lines = true;
                         self.line_mark_table[i] = LineMark::Free;
@@ -334,11 +334,11 @@ impl ImmixSpace {
             use std::ptr;
             ptr::write(
                 &mut space.usable_blocks as *mut Mutex<LinkedList<Raw<ImmixBlock>>>,
-                Mutex::new(LinkedList::new())
+                Mutex::new(LinkedList::new()),
             );
             ptr::write(
                 &mut space.used_blocks as *mut Mutex<LinkedList<Raw<ImmixBlock>>>,
-                Mutex::new(LinkedList::new())
+                Mutex::new(LinkedList::new()),
             );
         }
         trace!("    initialized total/usable/used blocks");

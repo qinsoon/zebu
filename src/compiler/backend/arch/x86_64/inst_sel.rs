@@ -4165,9 +4165,9 @@ impl<'a> InstructionSelection {
                 let cur_node = cur_node.unwrap();
                 match cur_node.v {
                     TreeNode_::Instruction(Instruction {
-                                               v: Instruction_::CCall { .. },
-                                               ..
-                                           }) => unimplemented!(),
+                        v: Instruction_::CCall { .. },
+                        ..
+                    }) => unimplemented!(),
                     _ => {
                         // wont have an exception branch, ignore
                     }

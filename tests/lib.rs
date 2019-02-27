@@ -23,10 +23,10 @@ extern crate maplit;
 #[macro_use]
 mod ir_macros;
 
-mod test_ir;
-mod test_compiler;
-mod test_runtime;
 mod test_api;
+mod test_compiler;
+mod test_ir;
+mod test_runtime;
 
 mod common {
     use std::fmt;

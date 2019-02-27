@@ -36,7 +36,7 @@ pub extern crate mu_ast as ast;
 #[macro_use]
 pub extern crate mu_utils as utils;
 pub extern crate mu_gc as gc;
-pub mod vm;
 pub mod compiler;
-pub mod runtime;
 pub mod linkutils;
+pub mod runtime;
+pub mod vm;

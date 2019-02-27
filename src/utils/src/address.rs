@@ -75,7 +75,10 @@ impl SubAssign<ByteSize> for Address {
 impl Sub<Address> for Address {
     type Output = ByteSize;
     fn sub(self, other: Address) -> ByteSize {
-        debug_assert!(self.0 >= other.0, "for (addr_a - addr_b), a needs to be larger than b");
+        debug_assert!(
+            self.0 >= other.0,
+            "for (addr_a - addr_b), a needs to be larger than b"
+        );
         self.0 - other.0
     }
 }

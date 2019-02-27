@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate mu;
 extern crate libloading;
+extern crate mu;
 
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
+use self::mu::ast::ir::*;
 use self::mu::ast::op::*;
-use self::mu::vm::*;
+use self::mu::ast::types::*;
 use self::mu::utils::LinkedHashMap;
+use self::mu::vm::*;
 
 use mu::linkutils;
 

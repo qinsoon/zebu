@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use linked_multimap::LinkedMultiMap;
 use linked_hashset::LinkedHashSet;
+use linked_multimap::LinkedMultiMap;
 use std::fmt;
 use std::hash::Hash;
 
 pub struct Tree<T> {
     edges: LinkedMultiMap<T, T>,
-    root: T
+    root: T,
 }
 
 impl<T: Clone + Eq + Hash> Tree<T> {
     pub fn new(root: T) -> Tree<T> {
         Tree {
             edges: LinkedMultiMap::new(),
-            root: root
+            root: root,
         }
     }
 
@@ -70,7 +70,8 @@ impl<T: Clone + Eq + Hash + fmt::Debug> Tree<T> {
             "{}* {:?}",
             (0..indent).map(|_| ' ').collect::<String>(),
             node
-        ).unwrap();
+        )
+        .unwrap();
         if self.edges.contains_key(node) {
             for child in self.edges.get(node).unwrap().iter() {
                 self.fmt_node(f, indent + 1, child);

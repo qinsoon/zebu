@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate mu;
-extern crate log;
 extern crate libloading;
+extern crate log;
+extern crate mu;
 
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
+use self::mu::ast::ir::*;
 use self::mu::ast::op::*;
+use self::mu::ast::types::*;
 use self::mu::vm::*;
 use mu::utils::LinkedHashMap;
 
-use std::sync::Arc;
-use self::mu::linkutils::aot;
 use self::mu::compiler::*;
+use self::mu::linkutils::aot;
+use std::sync::Arc;
 
 use std::f32;
 

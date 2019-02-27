@@ -15,18 +15,18 @@
 use ast::ir::*;
 use ast::ptr::*;
 use compiler;
-use compiler::frame::*;
 use compiler::backend::mc_loopanalysis::MCLoopAnalysisResult;
-use runtime::ValueLocation;
-use utils::Address;
-use utils::{LinkedHashMap, LinkedHashSet};
-use runtime::resolve_symbol;
+use compiler::frame::*;
 use rodal;
-use std::sync::Arc;
+use runtime::resolve_symbol;
+use runtime::ValueLocation;
 use std;
-use std::ops;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::ops;
+use std::sync::Arc;
+use utils::Address;
+use utils::{LinkedHashMap, LinkedHashSet};
 
 /// CompiledFunction store all information (including code) for a function that is compiled
 pub struct CompiledFunction {
@@ -57,7 +57,7 @@ pub struct CompiledFunction {
     pub end: ValueLocation,
 
     /// results of machine code loop analysis
-    pub loop_analysis: Option<Box<MCLoopAnalysisResult>>
+    pub loop_analysis: Option<Box<MCLoopAnalysisResult>>,
 }
 rodal_named!(CompiledFunction);
 unsafe impl rodal::Dump for CompiledFunction {
@@ -84,7 +84,7 @@ impl CompiledFunction {
         constant_locs: HashMap<MuID, P<Value>>,
         frame: Frame,
         start_loc: ValueLocation,
-        end_loc: ValueLocation
+        end_loc: ValueLocation,
     ) -> CompiledFunction {
         CompiledFunction {
             func_id: func_id,
@@ -96,7 +96,7 @@ impl CompiledFunction {
             frame: frame,
             start: start_loc,
             end: end_loc,
-            loop_analysis: None
+            loop_analysis: None,
         }
     }
 
@@ -104,13 +104,11 @@ impl CompiledFunction {
     pub fn mc(&self) -> &Box<MachineCode + Send + Sync> {
         match self.mc {
             Some(ref mc) => mc,
-            None => {
-                panic!(
-                    "trying to get mc from a compiled function.
+            None => panic!(
+                "trying to get mc from a compiled function.
                     But machine code is None (probably this compiled function is restored from
                     boot image and mc is thrown away)"
-                )
-            }
+            ),
         }
     }
 
@@ -118,7 +116,7 @@ impl CompiledFunction {
     pub fn mc_mut(&mut self) -> &mut Box<MachineCode + Send + Sync> {
         match self.mc {
             Some(ref mut mc) => mc,
-            None => panic!("no mc found from a compiled function")
+            None => panic!("no mc found from a compiled function"),
         }
     }
 }
@@ -129,22 +127,22 @@ pub struct CompiledCallsite {
     pub exceptional_destination: Option<Address>,
     pub stack_args_size: usize,
     pub callee_saved_registers: Arc<HashMap<isize, isize>>,
-    pub function_version: MuID
+    pub function_version: MuID,
 }
 impl CompiledCallsite {
     pub fn new(
         callsite: &Callsite,
         fv: MuID,
-        callee_saved_registers: Arc<HashMap<isize, isize>>
+        callee_saved_registers: Arc<HashMap<isize, isize>>,
     ) -> CompiledCallsite {
         CompiledCallsite {
             exceptional_destination: match &callsite.exception_destination {
                 &Some(ref name) => Some(resolve_symbol(name.clone())),
-                &None => None
+                &None => None,
             },
             stack_args_size: callsite.stack_arg_size,
             callee_saved_registers: callee_saved_registers,
-            function_version: fv
+            function_version: fv,
         }
     }
 }
@@ -266,7 +264,7 @@ pub trait MachineCode {
             for block in all_blocks.iter() {
                 let range = match self.get_block_range(block) {
                     Some(range) => range,
-                    None => panic!("cannot find range for block {}", block)
+                    None => panic!("cannot find range for block {}", block),
                 };
 
                 // start inst
@@ -274,13 +272,11 @@ pub trait MachineCode {
                 // last inst (we need to skip symbols)
                 let last_inst = match self.get_last_inst(range.end) {
                     Some(last) => last,
-                    None => {
-                        panic!(
-                            "cannot find last instruction in block {}, \
-                             this block contains no instruction?",
-                            block
-                        )
-                    }
+                    None => panic!(
+                        "cannot find last instruction in block {}, \
+                         this block contains no instruction?",
+                        block
+                    ),
                 };
                 trace!(
                     "Block {}: start_inst={}, end_inst(inclusive)={}",
@@ -333,7 +329,7 @@ pub trait MachineCode {
             let node = MachineCFGNode {
                 block: block.clone(),
                 preds: preds,
-                succs: succs
+                succs: succs,
             };
 
             trace!("{:?}", node);
@@ -345,13 +341,13 @@ pub trait MachineCode {
 }
 
 pub struct MachineCFG {
-    inner: LinkedHashMap<MuName, MachineCFGNode>
+    inner: LinkedHashMap<MuName, MachineCFGNode>,
 }
 
 impl MachineCFG {
     fn empty() -> Self {
         MachineCFG {
-            inner: LinkedHashMap::new()
+            inner: LinkedHashMap::new(),
         }
     }
 
@@ -384,7 +380,7 @@ impl MachineCFG {
         &self,
         from: &MuName,
         to: &MuName,
-        exclude_node: &MuName
+        exclude_node: &MuName,
     ) -> bool {
         // we cannot exclude start and end of the path
         assert!(exclude_node != from && exclude_node != to);
@@ -433,5 +429,5 @@ impl MachineCFG {
 pub struct MachineCFGNode {
     block: MuName,
     preds: Vec<MuName>,
-    succs: Vec<MuName>
+    succs: Vec<MuName>,
 }
