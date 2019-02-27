@@ -1,2 +1,0 @@
-#!/bin/bash
-$(ls -t ./target/debug/lib-* | head -1) "$@"

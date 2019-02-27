@@ -91,7 +91,6 @@ pub fn get_function_info(function_addr: Address) -> (CName, Address) {
 
 
 /// returns address for a given symbol, e.g. function name
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 pub fn resolve_symbol(symbol: MuName) -> Address {
     use std::ptr;
 
@@ -113,17 +112,6 @@ pub fn resolve_symbol(symbol: MuName) -> Address {
     Address::from_ptr(ret)
 }
 
-use std::os::raw::c_char;
-//use std::os::raw::c_void;
-// This function is specific to sel4-rumprun platform
-// it replaces the resolve_symbol function provided by Linux and Mac
-// all other platforms (except sel4-rumprun) already provide this function
-#[cfg(feature = "sel4-rumprun-target-side")]
-#[link(name = "zebu_c_helpers")]
-extern "C" {
-    fn c_resolve_symbol(symbol: *const c_char) -> *const c_void;
-}
-
 // Although it is possible to directly \
 // compile, call and check results of Mu test functions \
 // in Linux and Mac, but in-order to unify testing styles \
@@ -141,19 +129,6 @@ extern "C" {
 // *************************************************
 // This code has been moved to thread.rs \
 // due to the linkage with libruntime.a happenning there once
-
-// TODO
-// resolve symbol is different from the one used for Linux and Mac
-#[cfg(feature = "sel4-rumprun-target-side")]
-pub fn resolve_symbol(symbol: String) -> Address {
-    debug!("Going to resolve Symbol -{}-", symbol);
-    let ret = unsafe { c_resolve_symbol(CString::new(symbol.clone()).unwrap().as_ptr()) };
-    if ret.is_null() {
-        panic!("failed to resolve symbol: {}", symbol.clone());
-    }
-    debug!("Symbol -{}- resolved", symbol);
-    Address::from_ptr(ret)
-}
 
 /// ValueLocation represents the runtime location for a value.
 /// The purpose of this data structure is to refer to a location in a unified way

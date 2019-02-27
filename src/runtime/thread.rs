@@ -15,30 +15,26 @@
 use ast::ir::*;
 use ast::ptr::*;
 use ast::types::*;
-use vm::VM;
-use runtime::ValueLocation;
 use runtime::mm;
+use runtime::ValueLocation;
+use vm::VM;
 
-use utils::ByteSize;
-use utils::Address;
-use utils::Word;
-use utils::POINTER_SIZE;
 use utils::mem::memmap;
 use utils::mem::memsec;
+use utils::Address;
+use utils::ByteSize;
+use utils::Word;
+use utils::POINTER_SIZE;
 
 use std;
+use std::fmt;
 use std::ptr;
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use std::sync::Arc;
-use std::fmt;
 
 /// a 4mb Mu stack
-#[cfg(not(feature = "sel4-rumprun"))]
 pub const STACK_SIZE: ByteSize = (4 << 20); // 4mb
-/// a .25mb Mu stack for sel4-rumprun
-#[cfg(feature = "sel4-rumprun")]
-pub const STACK_SIZE: ByteSize = (4 << 16); // 256kb
 
 /// operating system page size
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
@@ -99,11 +95,10 @@ pub struct MuStack {
 
     /// the Mmap that keeps this memory alive
     #[allow(dead_code)]
-    mmap: Option<memmap::MmapMut>
+    mmap: Option<memmap::MmapMut>,
 }
-lazy_static!{
-    pub static ref MUSTACK_SP_OFFSET : usize =
-        offset_of!(MuStack=>sp).get_byte_offset();
+lazy_static! {
+    pub static ref MUSTACK_SP_OFFSET: usize = offset_of!(MuStack=>sp).get_byte_offset();
 }
 impl MuStack {
     /// creates a new MuStack for given entry function and function address
@@ -114,7 +109,7 @@ impl MuStack {
             let total_size = PAGE_SIZE * 2 + STACK_SIZE;
             match memmap::MmapMut::map_anon(total_size) {
                 Ok(m) => m,
-                Err(_) => panic!("failed to mmap for a stack")
+                Err(_) => panic!("failed to mmap for a stack"),
             }
         };
 
@@ -132,12 +127,12 @@ impl MuStack {
             memsec::mprotect(
                 overflow_guard.to_ptr_mut::<u8>(),
                 PAGE_SIZE,
-                memsec::Prot::NoAccess
+                memsec::Prot::NoAccess,
             );
             memsec::mprotect(
                 underflow_guard.to_ptr_mut::<u8>(),
                 PAGE_SIZE,
-                memsec::Prot::NoAccess
+                memsec::Prot::NoAccess,
             );
         }
 
@@ -180,7 +175,7 @@ impl MuStack {
             bp: upper_bound,
             ip: unsafe { Address::zero() },
 
-            mmap: Some(anon_mmap)
+            mmap: Some(anon_mmap),
         }
     }
 
@@ -192,10 +187,10 @@ impl MuStack {
     /// NOTE: any changes to here need to be reflected in muthread_start_normal, which consumes
     /// those values pushed to the stack
     pub fn setup_args(&mut self, vals: Vec<ValueLocation>) {
-        use utils::Word;
-        use utils::WORD_SIZE;
         use compiler::backend::RegGroup;
         use compiler::backend::{ARGUMENT_FPRS, ARGUMENT_GPRS};
+        use utils::Word;
+        use utils::WORD_SIZE;
 
         let mut gpr_used = vec![];
         let mut fpr_used = vec![];
@@ -208,7 +203,7 @@ impl MuStack {
             match reg_group {
                 RegGroup::GPR => gpr_used.push(word),
                 RegGroup::FPR => fpr_used.push(word),
-                RegGroup::GPREX => unimplemented!()
+                RegGroup::GPREX => unimplemented!(),
             }
         }
 
@@ -291,7 +286,7 @@ pub enum MuStackState {
     Active,
     /// can be destroyed
     Dead,
-    Unknown
+    Unknown,
 }
 
 /// MuThread represents metadata for a Mu thread.
@@ -316,22 +311,19 @@ pub struct MuThread {
     /// exception object being thrown by the thread
     pub exception_obj: Address,
     /// a pointer to the virtual machine
-    pub vm: Arc<VM>
+    pub vm: Arc<VM>,
 }
 unsafe impl Sync for MuThread {}
 unsafe impl Send for MuThread {}
 
 // a few field offsets the compiler uses
 lazy_static! {
-    pub static ref ALLOCATOR_OFFSET     : usize =
-        offset_of!(MuThread=>allocator).get_byte_offset();
-    pub static ref NATIVE_SP_LOC_OFFSET : usize =
+    pub static ref ALLOCATOR_OFFSET: usize = offset_of!(MuThread=>allocator).get_byte_offset();
+    pub static ref NATIVE_SP_LOC_OFFSET: usize =
         offset_of!(MuThread=>native_sp_loc).get_byte_offset();
-    pub static ref USER_TLS_OFFSET      : usize =
-        offset_of!(MuThread=>user_tls).get_byte_offset();
-    pub static ref STACK_OFFSET      : usize =
-        offset_of!(MuThread=>stack).get_byte_offset();
-    pub static ref EXCEPTION_OBJ_OFFSET : usize =
+    pub static ref USER_TLS_OFFSET: usize = offset_of!(MuThread=>user_tls).get_byte_offset();
+    pub static ref STACK_OFFSET: usize = offset_of!(MuThread=>stack).get_byte_offset();
+    pub static ref EXCEPTION_OBJ_OFFSET: usize =
         offset_of!(MuThread=>exception_obj).get_byte_offset();
 }
 
@@ -340,34 +332,35 @@ impl fmt::Display for MuThread {
         write!(
             f,
             "MuThread    @{:?}: {}\n",
-            self as *const MuThread,
-            self.hdr
-        ).unwrap();
+            self as *const MuThread, self.hdr
+        )
+            .unwrap();
         write!(f, "- header    @{:?}\n", &self.hdr as *const MuEntityHeader).unwrap();
         write!(
             f,
             "- allocator @{:?}\n",
             &self.allocator as *const mm::Mutator
-        ).unwrap();
+        )
+            .unwrap();
         write!(f, "- stack     @{:?}\n", &self.stack as *const *mut MuStack).unwrap();
         write!(
             f,
             "- native sp @{:?}: {}\n",
-            &self.native_sp_loc as *const Address,
-            self.native_sp_loc
-        ).unwrap();
+            &self.native_sp_loc as *const Address, self.native_sp_loc
+        )
+            .unwrap();
         write!(
             f,
             "- user_tls  @{:?}: {}\n",
-            &self.user_tls as *const Address,
-            self.user_tls
-        ).unwrap();
+            &self.user_tls as *const Address, self.user_tls
+        )
+            .unwrap();
         write!(
             f,
             "- exc obj   @{:?}: {}\n",
-            &self.exception_obj as *const Address,
-            self.exception_obj
-        ).unwrap();
+            &self.exception_obj as *const Address, self.exception_obj
+        )
+            .unwrap();
 
         Ok(())
     }
@@ -375,7 +368,6 @@ impl fmt::Display for MuThread {
 
 use std::os::raw::c_int;
 
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[link(name = "runtime_asm")]
@@ -401,7 +393,6 @@ extern "C" {
     pub fn exception_restore(dest: Address, callee_saved: *const Word, sp: Address) -> !;
 }
 
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[link(name = "runtime_c")]
@@ -421,28 +412,6 @@ extern "C" {
     fn c_check_result() -> c_int;
 }
 
-#[cfg(feature = "sel4-rumprun-target-side")]
-#[cfg(target_arch = "x86_64")]
-#[link(name = "runtime_asm")]
-extern "C" {
-    fn swap_to_mu_stack(new_sp: Address, entry: Address, old_sp_loc: Address);
-    #[allow(dead_code)]
-    fn muentry_swap_back_to_native_stack(sp_loc: Address);
-    pub fn get_current_frame_bp() -> Address;
-    pub fn exception_restore(dest: Address, callee_saved: *const Word, sp: Address) -> !;
-}
-
-#[cfg(feature = "sel4-rumprun-target-side")]
-#[cfg(target_arch = "x86_64")]
-#[link(name = "runtime_c")]
-#[allow(improper_ctypes)]
-extern "C" {
-    pub fn set_thread_local(thread: *mut MuThread);
-    pub fn muentry_get_thread_local() -> Address;
-    pub fn muentry_set_retval(val: u32);
-    fn c_check_result() -> c_int;
-}
-
 /// a Rust wrapper for the C function which returns the last set result
 pub fn check_result() -> c_int {
     let result = unsafe { c_check_result() };
@@ -455,7 +424,7 @@ impl MuThread {
         mut stack: Box<MuStack>,
         threadlocal: Address,
         vals: Vec<ValueLocation>,
-        vm: Arc<VM>
+        vm: Arc<VM>,
     ) {
         // set up arguments on stack
         stack.setup_args(vals);
@@ -470,7 +439,7 @@ impl MuThread {
         stack: Box<MuStack>,
         user_tls: Address,
         exception: Option<Address>,
-        vm: Arc<VM>
+        vm: Arc<VM>,
     ) -> (JoinHandle<()>, *mut MuThread) {
         let new_sp = stack.sp;
 
@@ -500,7 +469,7 @@ impl MuThread {
                     unsafe {
                         match exception {
                             Some(e) => muthread_start_exceptional(e, new_sp, sp_threadlocal_loc),
-                            None => muthread_start_normal(new_sp, sp_threadlocal_loc)
+                            None => muthread_start_normal(new_sp, sp_threadlocal_loc),
                         }
 
                         // Thread finished, delete it's data
@@ -508,9 +477,9 @@ impl MuThread {
                     }
                 }) {
                 Ok(handle) => handle,
-                Err(_) => panic!("failed to create a thread")
+                Err(_) => panic!("failed to create a thread"),
             },
-            muthread_ptr
+            muthread_ptr,
         )
     }
 
@@ -520,7 +489,7 @@ impl MuThread {
         allocator: mm::Mutator,
         stack: Box<MuStack>,
         user_tls: Address,
-        vm: Arc<VM>
+        vm: Arc<VM>,
     ) -> MuThread {
         MuThread {
             hdr: MuEntityHeader::unnamed(id),
@@ -529,7 +498,7 @@ impl MuThread {
             native_sp_loc: unsafe { Address::zero() },
             user_tls,
             vm,
-            exception_obj: unsafe { Address::zero() }
+            exception_obj: unsafe { Address::zero() },
         }
     }
 
@@ -593,7 +562,7 @@ impl MuThread {
             bp: Address::zero(),
             ip: Address::zero(),
             // we are not responsible for keeping the memory alive
-            mmap: None
+            mmap: None,
         });
 
         // fake a thread for current thread
@@ -607,7 +576,7 @@ impl MuThread {
             // valid thread local from user
             user_tls: threadlocal,
             vm,
-            exception_obj: Address::zero()
+            exception_obj: Address::zero(),
         });
         {
             let mutator_ptr = &mut fake_mu_thread.allocator as *mut mm::Mutator;
@@ -648,7 +617,7 @@ pub struct PrimordialThreadInfo {
     /// does user supply some contant arguments to start the primordial thread?
     pub has_const_args: bool,
     /// arguments
-    pub args: Vec<Constant>
+    pub args: Vec<Constant>,
 }
 
 rodal_struct!(PrimordialThreadInfo {
@@ -676,7 +645,7 @@ pub unsafe extern "C" fn muentry_kill_stack(stack: *mut MuStack) {
 pub unsafe extern "C" fn muentry_new_thread_exceptional(
     stack: *mut MuStack,
     thread_local: Address,
-    exception: Address
+    exception: Address,
 ) -> *mut MuThread {
     let vm = MuThread::current_mut().vm.clone();
     let (join_handle, muthread) = MuThread::mu_thread_launch(
@@ -684,7 +653,7 @@ pub unsafe extern "C" fn muentry_new_thread_exceptional(
         Box::from_raw(stack),
         thread_local,
         Some(exception),
-        vm.clone()
+        vm.clone(),
     );
     vm.push_join_handle(join_handle);
     muthread
@@ -694,7 +663,7 @@ pub unsafe extern "C" fn muentry_new_thread_exceptional(
 #[no_mangle]
 pub unsafe extern "C" fn muentry_new_thread_normal(
     stack: *mut MuStack,
-    thread_local: Address
+    thread_local: Address,
 ) -> *mut MuThread {
     let vm = MuThread::current_mut().vm.clone();
     let (join_handle, muthread) = MuThread::mu_thread_launch(
@@ -702,7 +671,7 @@ pub unsafe extern "C" fn muentry_new_thread_normal(
         Box::from_raw(stack),
         thread_local,
         None,
-        vm.clone()
+        vm.clone(),
     );
     vm.push_join_handle(join_handle);
     muthread

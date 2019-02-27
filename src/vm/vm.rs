@@ -14,37 +14,37 @@
 
 use std::collections::HashMap;
 
-use rodal;
-use ast::ptr::*;
-use ast::ir::*;
 use ast::inst::*;
+use ast::ir::*;
+use ast::ptr::*;
 use ast::types;
 use ast::types::*;
-use compiler::{Compiler, CompilerPolicy};
 use compiler::backend;
 use compiler::backend::BackendType;
-use compiler::machine_code::{CompiledFunction, CompiledCallsite};
+use compiler::machine_code::{CompiledCallsite, CompiledFunction};
+use compiler::{Compiler, CompilerPolicy};
+use rodal;
 
+use self::gc::*;
+use runtime::mm as gc;
 use runtime::thread::*;
 use runtime::*;
-use utils::ByteSize;
-use utils::BitSize;
 use utils::Address;
-use runtime::mm as gc;
-use self::gc::*;
+use utils::BitSize;
+use utils::ByteSize;
 use vm::handle::*;
-use vm::vm_options::VMOptions;
 use vm::vm_options::MuLogLevel;
+use vm::vm_options::VMOptions;
 
 use log::LogLevel;
-use std::sync::Arc;
-use std::sync::RwLock;
-use std::sync::Mutex;
-use std::sync::RwLockWriteGuard;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::thread::JoinHandle;
-use std::collections::LinkedList;
 use std;
+use std::collections::LinkedList;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::sync::RwLockWriteGuard;
+use std::thread::JoinHandle;
 use utils::bit_utils::{bits_ones, u64_asr};
 
 /// The VM struct. This stores metadata for the currently running Zebu instance.
@@ -128,7 +128,7 @@ pub struct VM {
     callsite_count: AtomicUsize,
 
     /// A list of all threads currently waiting to be joined
-    pub pending_joins: Mutex<LinkedList<JoinHandle<()>>>
+    pub pending_joins: Mutex<LinkedList<JoinHandle<()>>>,
 }
 
 rodal_named!(VM);
@@ -158,9 +158,7 @@ unsafe impl rodal::Dump for VM {
         dumper.dump_object_here(&global_locations);
 
         dumper.dump_padding(&self.func_vers);
-        let func_vers = RwLock::new(
-            rodal::EmptyHashMap::<MuID, RwLock<MuFunctionVersion>>::new()
-        );
+        let func_vers = RwLock::new(rodal::EmptyHashMap::<MuID, RwLock<MuFunctionVersion>>::new());
         dumper.dump_object_here(&func_vers);
 
         dumper.dump_padding(&self.aot_pending_funcref_store);
@@ -226,7 +224,6 @@ impl<'a> VM {
     }
 
     /// internal function to create a VM with options
-    #[cfg(not(feature = "sel4-rumprun"))]
     fn new_internal(options: VMOptions) -> VM {
         VM::start_logging(options.flag_log_level);
 
@@ -239,7 +236,7 @@ impl<'a> VM {
             types: RwLock::new(HashMap::new()),
             backend_type_info: RwLock::new(HashMap::new()),
             globals: RwLock::new(HashMap::new()),
-            global_locations: RwLock::new(hashmap!{}),
+            global_locations: RwLock::new(hashmap! {}),
             func_sigs: RwLock::new(HashMap::new()),
             func_vers: RwLock::new(HashMap::new()),
             funcs: RwLock::new(HashMap::new()),
@@ -252,60 +249,8 @@ impl<'a> VM {
             compiled_callsite_table: RwLock::new(HashMap::new()),
             primordial_threadlocal: RwLock::new(None),
             callsite_count: AtomicUsize::new(0),
-            pending_joins: Mutex::new(LinkedList::new())
+            pending_joins: Mutex::new(LinkedList::new()),
         };
-
-        // insert all internal types
-        {
-            let mut types = ret.types.write().unwrap();
-            for ty in INTERNAL_TYPES.iter() {
-                types.insert(ty.id(), ty.clone());
-            }
-        }
-
-        // starts allocating ID from USER_ID_START
-        ret.next_id.store(USER_ID_START, Ordering::Relaxed);
-
-        // init types
-        types::init_types();
-
-        // init runtime
-        ret.init_runtime();
-
-        ret
-    }
-
-    /// internal function to create a VM with options for sel4-rumprun
-    /// default memory sizes are different from other platforms
-    #[cfg(feature = "sel4-rumprun")]
-    fn new_internal(options: VMOptions) -> VM {
-        VM::start_logging(options.flag_log_level);
-
-        let mut ret = VM {
-            next_id: AtomicUsize::new(0),
-            vm_options: options,
-            id_name_map: RwLock::new(HashMap::new()),
-            name_id_map: RwLock::new(HashMap::new()),
-            constants: RwLock::new(HashMap::new()),
-            types: RwLock::new(HashMap::new()),
-            backend_type_info: RwLock::new(HashMap::new()),
-            globals: RwLock::new(HashMap::new()),
-            global_locations: RwLock::new(hashmap!{}),
-            func_sigs: RwLock::new(HashMap::new()),
-            func_vers: RwLock::new(HashMap::new()),
-            funcs: RwLock::new(HashMap::new()),
-            compiled_funcs: RwLock::new(HashMap::new()),
-            callsite_table: RwLock::new(HashMap::new()),
-            primordial: RwLock::new(None),
-            aot_pending_funcref_store: RwLock::new(HashMap::new()),
-            compiled_callsite_table: RwLock::new(HashMap::new()),
-            callsite_count: AtomicUsize::new(0)
-        };
-
-        // currently, the default sizes don't work on sel4-rumprun platform
-        // this is due to memory allocation size limitations
-        ret.vm_options.flag_gc_immixspace_size = 1 << 19;
-        ret.vm_options.flag_gc_lospace_size = 1 << 19;
 
         // insert all internal types
         {
@@ -337,7 +282,7 @@ impl<'a> VM {
             immix_normal_size: options.flag_gc_immixspace_size / 2,
             lo_size: options.flag_gc_lospace_size,
             n_gcthreads: options.flag_gc_nthreads,
-            enable_gc: !options.flag_gc_disable_collection
+            enable_gc: !options.flag_gc_disable_collection,
         });
     }
 
@@ -380,17 +325,15 @@ impl<'a> VM {
             LogLevel::Warn => 1,
             LogLevel::Info => 2,
             LogLevel::Debug => 3,
-            LogLevel::Trace => 4
+            LogLevel::Trace => 4,
         };
 
         match stderrlog::new().verbosity(verbose).init() {
-            Ok(()) => { info!("logger initialized") }
-            Err(e) => {
-                error!(
-                    "failed to init logger, probably already initialized: {:?}",
-                    e
-                )
-            }
+            Ok(()) => info!("logger initialized"),
+            Err(e) => error!(
+                "failed to init logger, probably already initialized: {:?}",
+                e
+            ),
         }
     }
 
@@ -463,8 +406,8 @@ impl<'a> VM {
                     CompiledCallsite::new(
                         &callsite,
                         compiled_func.func_ver_id,
-                        callee_saved_table.clone()
-                    )
+                        callee_saved_table.clone(),
+                    ),
                 );
             }
         }
@@ -507,7 +450,7 @@ impl<'a> VM {
         let map = self.name_id_map.read().unwrap();
         match map.get(&name.to_string()) {
             Some(id) => *id,
-            None => panic!("cannot find id for name: {}", name)
+            None => panic!("cannot find id for name: {}", name),
         }
     }
 
@@ -524,7 +467,7 @@ impl<'a> VM {
         let ret = P(Value {
             hdr: entity,
             ty: ty,
-            v: Value_::Constant(val)
+            v: Value_::Constant(val),
         });
 
         let mut constants = self.constants.write().unwrap();
@@ -538,7 +481,7 @@ impl<'a> VM {
         &self,
         map: &mut RwLockWriteGuard<HashMap<MuID, P<Value>>>,
         id: MuID,
-        val: P<Value>
+        val: P<Value>,
     ) {
         debug_assert!(!map.contains_key(&id));
 
@@ -551,7 +494,7 @@ impl<'a> VM {
         let const_lock = self.constants.read().unwrap();
         match const_lock.get(&id) {
             Some(ret) => ret.clone(),
-            None => panic!("cannot find const #{}", id)
+            None => panic!("cannot find const #{}", id),
         }
     }
 
@@ -572,9 +515,9 @@ impl<'a> VM {
             hdr: entity,
             ty: self.declare_type(
                 MuEntityHeader::unnamed(self.next_id()),
-                MuType_::iref(ty.clone())
+                MuType_::iref(ty.clone()),
             ),
-            v: Value_::Global(ty)
+            v: Value_::Global(ty),
         });
 
         let mut globals = self.globals.write().unwrap();
@@ -590,7 +533,7 @@ impl<'a> VM {
         globals: &mut RwLockWriteGuard<HashMap<MuID, P<Value>>>,
         global_locs: &mut RwLockWriteGuard<HashMap<MuID, ValueLocation>>,
         id: MuID,
-        val: P<Value>
+        val: P<Value>,
     ) {
         self.declare_global_internal_no_alloc(globals, id, val.clone());
         self.alloc_global(global_locs, id, val);
@@ -603,7 +546,7 @@ impl<'a> VM {
         &self,
         globals: &mut RwLockWriteGuard<HashMap<MuID, P<Value>>>,
         id: MuID,
-        val: P<Value>
+        val: P<Value>,
     ) {
         debug_assert!(!globals.contains_key(&id));
 
@@ -616,7 +559,7 @@ impl<'a> VM {
         &self,
         global_locs: &mut RwLockWriteGuard<HashMap<MuID, ValueLocation>>,
         id: MuID,
-        val: P<Value>
+        val: P<Value>,
     ) {
         let backend_ty = self.get_backend_type_info(val.ty.get_referent_ty().unwrap().id());
         let loc = gc::allocate_global(val, backend_ty, self);
@@ -639,7 +582,7 @@ impl<'a> VM {
         &self,
         types: &mut RwLockWriteGuard<HashMap<MuID, P<MuType>>>,
         id: MuID,
-        ty: P<MuType>
+        ty: P<MuType>,
     ) {
         debug_assert!(!types.contains_key(&id));
 
@@ -665,7 +608,7 @@ impl<'a> VM {
         let type_lock = self.types.read().unwrap();
         match type_lock.get(&id) {
             Some(ret) => ret.clone(),
-            None => panic!("cannot find type #{}", id)
+            None => panic!("cannot find type #{}", id),
         }
     }
 
@@ -674,12 +617,12 @@ impl<'a> VM {
         &self,
         entity: MuEntityHeader,
         ret_tys: Vec<P<MuType>>,
-        arg_tys: Vec<P<MuType>>
+        arg_tys: Vec<P<MuType>>,
     ) -> P<MuFuncSig> {
         let ret = P(MuFuncSig {
             hdr: entity,
             ret_tys: ret_tys,
-            arg_tys: arg_tys
+            arg_tys: arg_tys,
         });
 
         let mut func_sigs = self.func_sigs.write().unwrap();
@@ -693,7 +636,7 @@ impl<'a> VM {
         &self,
         sigs: &mut RwLockWriteGuard<HashMap<MuID, P<MuFuncSig>>>,
         id: MuID,
-        sig: P<MuFuncSig>
+        sig: P<MuFuncSig>,
     ) {
         debug_assert!(!sigs.contains_key(&id));
 
@@ -706,7 +649,7 @@ impl<'a> VM {
         let func_sig_lock = self.func_sigs.read().unwrap();
         match func_sig_lock.get(&id) {
             Some(ret) => ret.clone(),
-            None => panic!("cannot find func sig #{}", id)
+            None => panic!("cannot find func sig #{}", id),
         }
     }
 
@@ -722,7 +665,7 @@ impl<'a> VM {
         &self,
         funcs: &mut RwLockWriteGuard<HashMap<MuID, RwLock<MuFunction>>>,
         id: MuID,
-        func: MuFunction
+        func: MuFunction,
     ) {
         debug_assert!(!funcs.contains_key(&id));
 
@@ -737,7 +680,7 @@ impl<'a> VM {
         let funcs_lock = self.funcs.read().unwrap();
         match funcs_lock.get(&id) {
             Some(func) => func.read().unwrap().name(),
-            None => panic!("cannot find name for Mu function #{}")
+            None => panic!("cannot find name for Mu function #{}"),
         }
     }
 
@@ -747,7 +690,7 @@ impl<'a> VM {
         let funcs_lock = self.funcs.read().unwrap();
         match funcs_lock.get(&id) {
             Some(func) => func.read().unwrap().sig.clone(),
-            None => panic!("cannot find Mu function #{}", id)
+            None => panic!("cannot find Mu function #{}", id),
         }
     }
 
@@ -760,7 +703,7 @@ impl<'a> VM {
                 let func_guard = rwlock_func.read().unwrap();
                 func_guard.cur_ver
             }
-            None => None
+            None => None,
         }
     }
 
@@ -817,7 +760,7 @@ impl<'a> VM {
         new_globals: &mut HashMap<MuID, P<Value>>,
         new_funcs: &mut HashMap<MuID, Box<MuFunction>>,
         new_func_vers: &mut HashMap<MuID, Box<MuFunctionVersion>>,
-        arc_vm: Arc<VM>
+        arc_vm: Arc<VM>,
     ) {
         // Make sure other components, if ever acquiring multiple locks at the same time, acquire
         // them in this order, to prevent deadlock.
@@ -900,12 +843,11 @@ impl<'a> VM {
     /// (the function and funcver should already be declared before this call)
     pub fn add_compiled_func(&self, func: CompiledFunction) {
         debug_assert!(self.funcs.read().unwrap().contains_key(&func.func_id));
-        debug_assert!(
-            self.func_vers
-                .read()
-                .unwrap()
-                .contains_key(&func.func_ver_id)
-        );
+        debug_assert!(self
+            .func_vers
+            .read()
+            .unwrap()
+            .contains_key(&func.func_ver_id));
 
         self.compiled_funcs
             .write()
@@ -930,7 +872,7 @@ impl<'a> VM {
         let types = self.types.read().unwrap();
         let ty = match types.get(&tyid) {
             Some(ty) => ty,
-            None => panic!("invalid type id during get_backend_type_info(): {}", tyid)
+            None => panic!("invalid type id during get_backend_type_info(): {}", tyid),
         };
         let mut resolved = Box::new(backend::BackendType::resolve(ty, self));
         resolved.resolve_gc_type(self);
@@ -951,7 +893,7 @@ impl<'a> VM {
                             GlobalTypeTable::insert_large_entry(enc.clone())
                         }
                     }
-                    TypeEncode::Full(ref enc) => GlobalTypeTable::insert_full_entry(enc.clone())
+                    TypeEncode::Full(ref enc) => GlobalTypeTable::insert_full_entry(enc.clone()),
                 };
                 debug!("ENCODE: {} = {:?}", id, gc_type);
                 type_map.insert(gc_type.clone(), id);
@@ -982,7 +924,7 @@ impl<'a> VM {
         let lock = self.gc_type_map.read().unwrap();
         match lock.get(enc) {
             Some(id) => *id,
-            None => panic!("cannot find id for gc encode: {:?}", enc)
+            None => panic!("cannot find id for gc encode: {:?}", enc),
         }
     }
 
@@ -990,7 +932,7 @@ impl<'a> VM {
         let lock = self.gc_id_map.read().unwrap();
         match lock.get(&id) {
             Some(enc) => enc.clone(),
-            None => panic!("cannot find type for gc type ID: {}", id)
+            None => panic!("cannot find type for gc type ID: {}", id),
         }
     }
 
@@ -1062,7 +1004,7 @@ impl<'a> VM {
         *guard = Some(PrimordialThreadInfo {
             func_id: func_id,
             has_const_args: has_const_args,
-            args: args
+            args: args,
         });
     }
 
@@ -1097,7 +1039,7 @@ impl<'a> VM {
         sym_strings: Vec<MuName>,
         reloc_fields: Vec<&APIHandle>,
         reloc_strings: Vec<MuName>,
-        output_file: String
+        output_file: String,
     ) {
         self.make_boot_image_internal(
             whitelist,
@@ -1109,7 +1051,7 @@ impl<'a> VM {
             reloc_fields,
             reloc_strings,
             vec![],
-            output_file
+            output_file,
         )
     }
 
@@ -1128,7 +1070,7 @@ impl<'a> VM {
         reloc_fields: Vec<&APIHandle>,
         reloc_strings: Vec<MuName>,
         extra_sources_to_link: Vec<String>,
-        output_file: String
+        output_file: String,
     ) {
         info!("Making boot image...");
 
@@ -1173,7 +1115,7 @@ impl<'a> VM {
                                 compiler.compile(&mut func_ver);
                             }
                         }
-                        None => error!("whitelist function {} has no version defined", f)
+                        None => error!("whitelist function {} has no version defined", f),
                     }
                 }
             }
@@ -1237,7 +1179,7 @@ impl<'a> VM {
                 self,
                 symbols,
                 fields,
-                primordial_threadlocal.map(|x| x.v.as_ref().1)
+                primordial_threadlocal.map(|x| x.v.as_ref().1),
             );
 
             // link
@@ -1310,7 +1252,7 @@ impl<'a> VM {
 
         self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::Ref(ty, addr)
+            v: APIHandleValue::Ref(ty, addr),
         })
     }
 
@@ -1332,7 +1274,7 @@ impl<'a> VM {
 
         self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::Ref(ty, addr)
+            v: APIHandleValue::Ref(ty, addr),
         })
     }
 
@@ -1350,7 +1292,7 @@ impl<'a> VM {
 
                 self.new_handle(APIHandle {
                     id: handle_id,
-                    v: APIHandleValue::Ref(inner_ty, addr)
+                    v: APIHandleValue::Ref(inner_ty, addr),
                 })
             }
             APIHandleValue::IRef(_, addr) => {
@@ -1359,12 +1301,12 @@ impl<'a> VM {
 
                 self.new_handle(APIHandle {
                     id: handle_id,
-                    v: APIHandleValue::IRef(inner_ty, addr)
+                    v: APIHandleValue::IRef(inner_ty, addr),
                 })
             }
             APIHandleValue::FuncRef(_) => unimplemented!(),
 
-            _ => panic!("unexpected operand for refcast: {:?}", from_op)
+            _ => panic!("unexpected operand for refcast: {:?}", from_op),
         }
     }
 
@@ -1375,7 +1317,7 @@ impl<'a> VM {
         // assume iref has the same address as ref
         let ret = self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::IRef(ty, addr)
+            v: APIHandleValue::IRef(ty, addr),
         });
 
         trace!("API: get iref from {:?}", handle_ref);
@@ -1388,7 +1330,7 @@ impl<'a> VM {
     pub fn handle_shift_iref(
         &self,
         handle_iref: APIHandleArg,
-        offset: APIHandleArg
+        offset: APIHandleArg,
     ) -> APIHandleResult {
         let (ty, addr) = handle_iref.v.as_iref();
         let offset = self.handle_to_uint64(offset);
@@ -1403,7 +1345,7 @@ impl<'a> VM {
 
         let ret = self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::IRef(ty, offset_addr)
+            v: APIHandleValue::IRef(ty, offset_addr),
         });
 
         trace!("API: shift iref from {:?}", handle_iref);
@@ -1416,14 +1358,14 @@ impl<'a> VM {
     pub fn handle_get_elem_iref(
         &self,
         handle_iref: APIHandleArg,
-        index: APIHandleArg
+        index: APIHandleArg,
     ) -> APIHandleResult {
         let (ty, addr) = handle_iref.v.as_iref();
         let index = self.handle_to_uint64(index);
 
         let ele_ty = match ty.get_elem_ty() {
             Some(ty) => ty,
-            None => panic!("cannot get element ty from {}", ty)
+            None => panic!("cannot get element ty from {}", ty),
         };
         let elem_addr = {
             use utils::math::align_up;
@@ -1435,7 +1377,7 @@ impl<'a> VM {
 
         let ret = self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::IRef(ele_ty, elem_addr)
+            v: APIHandleValue::IRef(ele_ty, elem_addr),
         });
 
         trace!(
@@ -1459,12 +1401,12 @@ impl<'a> VM {
 
         let varpart_ty = match ty.get_hybrid_varpart_ty() {
             Some(ty) => ty,
-            None => panic!("cannot get varpart ty from {}", ty)
+            None => panic!("cannot get varpart ty from {}", ty),
         };
 
         let ret = self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::IRef(varpart_ty, varpart_addr)
+            v: APIHandleValue::IRef(varpart_ty, varpart_addr),
         });
 
         trace!("API: get var part iref from {:?}", handle_iref);
@@ -1477,13 +1419,13 @@ impl<'a> VM {
     pub fn handle_get_field_iref(
         &self,
         handle_iref: APIHandleArg,
-        field: usize
+        field: usize,
     ) -> APIHandleResult {
         let (ty, addr) = handle_iref.v.as_iref();
 
         let field_ty = match ty.get_field_ty(field) {
             Some(ty) => ty,
-            None => panic!("ty is not struct ty: {}", ty)
+            None => panic!("ty is not struct ty: {}", ty),
         };
 
         let field_addr = {
@@ -1494,7 +1436,7 @@ impl<'a> VM {
 
         let ret = self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::IRef(field_ty, field_addr)
+            v: APIHandleValue::IRef(field_ty, field_addr),
         });
 
         trace!(
@@ -1517,9 +1459,9 @@ impl<'a> VM {
             MemoryOrder::Relaxed => Ordering::Relaxed,
             MemoryOrder::Acquire => Ordering::Acquire,
             MemoryOrder::SeqCst => Ordering::SeqCst,
-            MemoryOrder::NotAtomic => Ordering::Relaxed,    // use relax for not atomic
-            MemoryOrder::Consume => Ordering::Acquire,    // use acquire for consume
-            _ => panic!("unsupported order {:?} for LOAD", ord)
+            MemoryOrder::NotAtomic => Ordering::Relaxed, // use relax for not atomic
+            MemoryOrder::Consume => Ordering::Acquire,   // use acquire for consume
+            _ => panic!("unsupported order {:?} for LOAD", ord),
         };
 
         let handle_id = self.next_id();
@@ -1533,13 +1475,13 @@ impl<'a> VM {
                 MuType_::UPtr(ref ty) => APIHandleValue::UPtr(ty.clone(), addr.load::<Address>()),
                 MuType_::Tagref64 => APIHandleValue::TagRef64(addr.load::<u64>()),
 
-                _ => unimplemented!()
+                _ => unimplemented!(),
             }
         };
 
         let ret = self.new_handle(APIHandle {
             id: handle_id,
-            v: handle_value
+            v: handle_value,
         });
 
         trace!("API: load from {:?}", loc);
@@ -1559,8 +1501,8 @@ impl<'a> VM {
             MemoryOrder::Relaxed => Ordering::Relaxed,
             MemoryOrder::Release => Ordering::Release,
             MemoryOrder::SeqCst => Ordering::SeqCst,
-            MemoryOrder::NotAtomic => Ordering::Relaxed,    // use relaxed for not atomic
-            _ => panic!("unsupported order {:?} for STORE", ord)
+            MemoryOrder::NotAtomic => Ordering::Relaxed, // use relaxed for not atomic
+            _ => panic!("unsupported order {:?} for STORE", ord),
         };
 
         // get value and store
@@ -1574,7 +1516,7 @@ impl<'a> VM {
                         9...16 => addr.store::<u16>(trunc as u16),
                         17...32 => addr.store::<u32>(trunc as u32),
                         33...64 => addr.store::<u64>(trunc as u64),
-                        _ => panic!("unimplemented int length")
+                        _ => panic!("unimplemented int length"),
                     }
                 }
                 APIHandleValue::TagRef64(val) => addr.store::<u64>(val),
@@ -1583,8 +1525,9 @@ impl<'a> VM {
                 APIHandleValue::UPtr(_, aval) => addr.store::<Address>(aval),
                 APIHandleValue::UFP(_, aval) => addr.store::<Address>(aval),
 
-                APIHandleValue::Struct(_) | APIHandleValue::Array(_) |
-                APIHandleValue::Vector(_) => unimplemented!(),
+                APIHandleValue::Struct(_)
+                | APIHandleValue::Array(_)
+                | APIHandleValue::Vector(_) => unimplemented!(),
 
                 APIHandleValue::Ref(_, aval) | APIHandleValue::IRef(_, aval) => {
                     addr.store::<Address>(aval)
@@ -1601,7 +1544,7 @@ impl<'a> VM {
                     }
                 }
 
-                _ => unimplemented!()
+                _ => unimplemented!(),
             }
         }
 
@@ -1619,7 +1562,7 @@ impl<'a> VM {
         let mut pending_funcref_guard = self.aot_pending_funcref_store.write().unwrap();
         pending_funcref_guard.insert(
             addr,
-            ValueLocation::Relocatable(backend::RegGroup::GPR, symbol)
+            ValueLocation::Relocatable(backend::RegGroup::GPR, symbol),
         );
     }
 
@@ -1635,7 +1578,7 @@ impl<'a> VM {
         let (ty, addr) = loc.v.as_ref_or_iref();
         self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::UPtr(ty, addr)
+            v: APIHandleValue::UPtr(ty, addr),
         })
     }
 
@@ -1655,7 +1598,7 @@ impl<'a> VM {
         let (ty, addr) = loc.v.as_ref_or_iref();
         self.new_handle(APIHandle {
             id: self.next_id(),
-            v: APIHandleValue::UPtr(ty, addr)
+            v: APIHandleValue::UPtr(ty, addr),
         })
     }
 
@@ -1665,7 +1608,7 @@ impl<'a> VM {
 
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::FuncRef(id)
+            v: APIHandleValue::FuncRef(id),
         })
     }
 
@@ -1685,7 +1628,7 @@ impl<'a> VM {
 
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::IRef(global_inner_ty, global_iref)
+            v: APIHandleValue::IRef(global_inner_ty, global_iref),
         })
     }
 
@@ -1703,39 +1646,31 @@ impl<'a> VM {
             Value_::Constant(Constant::Int(val)) => {
                 let len = match const_ty.get_int_length() {
                     Some(len) => len,
-                    None => {
-                        panic!(
-                            "expected ty to be Int for a Constant::Int, found {}",
-                            const_ty
-                        )
-                    }
+                    None => panic!(
+                        "expected ty to be Int for a Constant::Int, found {}",
+                        const_ty
+                    ),
                 };
 
                 APIHandle {
                     id: handle_id,
-                    v: APIHandleValue::Int(val, len)
+                    v: APIHandleValue::Int(val, len),
                 }
             }
-            Value_::Constant(Constant::Float(val)) => {
-                APIHandle {
-                    id: handle_id,
-                    v: APIHandleValue::Float(val)
-                }
-            }
-            Value_::Constant(Constant::Double(val)) => {
-                APIHandle {
-                    id: handle_id,
-                    v: APIHandleValue::Double(val)
-                }
-            }
+            Value_::Constant(Constant::Float(val)) => APIHandle {
+                id: handle_id,
+                v: APIHandleValue::Float(val),
+            },
+            Value_::Constant(Constant::Double(val)) => APIHandle {
+                id: handle_id,
+                v: APIHandleValue::Double(val),
+            },
             Value_::Constant(Constant::FuncRef(_)) => unimplemented!(),
-            Value_::Constant(Constant::NullRef) => {
-                APIHandle {
-                    id: handle_id,
-                    v: APIHandleValue::Ref(types::VOID_TYPE.clone(), unsafe { Address::zero() })
-                }
-            }
-            _ => unimplemented!()
+            Value_::Constant(Constant::NullRef) => APIHandle {
+                id: handle_id,
+                v: APIHandleValue::Ref(types::VOID_TYPE.clone(), unsafe { Address::zero() }),
+            },
+            _ => unimplemented!(),
         };
 
         self.new_handle(handle)
@@ -1763,7 +1698,7 @@ impl<'a> VM {
         let handle_id = self.next_id();
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::Float(num)
+            v: APIHandleValue::Float(num),
         })
     }
 
@@ -1783,7 +1718,7 @@ impl<'a> VM {
         let handle_id = self.next_id();
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::Double(num)
+            v: APIHandleValue::Double(num),
         })
     }
 
@@ -1799,7 +1734,7 @@ impl<'a> VM {
         let handle_id = self.next_id();
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::UPtr(ty, ptr)
+            v: APIHandleValue::UPtr(ty, ptr),
         })
     }
 
@@ -1815,7 +1750,7 @@ impl<'a> VM {
         let handle_id = self.next_id();
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::UFP(ty, ptr)
+            v: APIHandleValue::UFP(ty, ptr),
         })
     }
 
@@ -1850,7 +1785,7 @@ impl<'a> VM {
         let handle_id = self.next_id();
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::Double(unsafe { std::mem::transmute(value.v.as_tr64()) })
+            v: APIHandleValue::Double(unsafe { std::mem::transmute(value.v.as_tr64()) }),
         })
     }
 
@@ -1862,8 +1797,8 @@ impl<'a> VM {
             id: handle_id,
             v: APIHandleValue::Int(
                 ((opnd & 0xffffffffffffeu64) >> 1) | ((opnd & 0x8000000000000000u64) >> 12),
-                52
-            )
+                52,
+            ),
         })
     }
 
@@ -1875,10 +1810,10 @@ impl<'a> VM {
             id: handle_id,
             v: APIHandleValue::Ref(types::REF_VOID_TYPE.clone(), unsafe {
                 Address::from_usize(
-                    ((opnd & 0x7ffffffffff8u64) | u64_asr(opnd & 0x8000000000000000u64, 16)) as
-                        usize
+                    ((opnd & 0x7ffffffffff8u64) | u64_asr(opnd & 0x8000000000000000u64, 16))
+                        as usize,
                 )
-            })
+            }),
         })
     }
 
@@ -1890,8 +1825,8 @@ impl<'a> VM {
             id: handle_id,
             v: APIHandleValue::Int(
                 u64_asr(opnd & 0x000f800000000000u64, 46) | (u64_asr(opnd & 0x4, 2)),
-                6
-            )
+                6,
+            ),
         })
     }
 
@@ -1908,7 +1843,7 @@ impl<'a> VM {
 
         self.new_handle(APIHandle {
             id: handle_id,
-            v: APIHandleValue::TagRef64(result_bits)
+            v: APIHandleValue::TagRef64(result_bits),
         })
     }
 
@@ -1919,9 +1854,10 @@ impl<'a> VM {
         self.new_handle(APIHandle {
             id: handle_id,
             v: APIHandleValue::TagRef64(
-                0x7ff0000000000001u64 | ((opnd & 0x7ffffffffffffu64) << 1) |
-                    ((opnd & 0x8000000000000u64) << 12)
-            )
+                0x7ff0000000000001u64
+                    | ((opnd & 0x7ffffffffffffu64) << 1)
+                    | ((opnd & 0x8000000000000u64) << 12),
+            ),
         })
     }
 
@@ -1934,10 +1870,12 @@ impl<'a> VM {
         self.new_handle(APIHandle {
             id: handle_id,
             v: APIHandleValue::TagRef64(
-                0x7ff0000000000002u64 | (addr_ & 0x7ffffffffff8u64) |
-                    ((addr_ & 0x800000000000u64) << 16) |
-                    ((tag_ & 0x3eu64) << 46) | ((tag_ & 0x1) << 2)
-            )
+                0x7ff0000000000002u64
+                    | (addr_ & 0x7ffffffffff8u64)
+                    | ((addr_ & 0x800000000000u64) << 16)
+                    | ((tag_ & 0x3eu64) << 46)
+                    | ((tag_ & 0x1) << 2),
+            ),
         })
     }
 }
