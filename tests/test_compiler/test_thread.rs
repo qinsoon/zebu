@@ -16,15 +16,15 @@
 
 extern crate mu;
 
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
+use self::mu::ast::ir::*;
 use self::mu::ast::op::*;
-use self::mu::vm::*;
+use self::mu::ast::types::*;
 use self::mu::compiler::*;
-use self::mu::utils::LinkedHashMap;
 use self::mu::linkutils;
 use self::mu::linkutils::aot;
+use self::mu::utils::LinkedHashMap;
+use self::mu::vm::*;
 
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -57,7 +57,7 @@ fn test_thread_create() {
     let executable = aot::link_primordial(
         vec![Arc::new("primordial_main".to_string())],
         "primordial_main_test",
-        &vm
+        &vm,
     );
     linkutils::exec_path(executable);
 }
@@ -100,7 +100,7 @@ fn test_main_with_retval() {
         vec![],
         vec![],
         vec![],
-        "test_main_with_retval".to_string()
+        "test_main_with_retval".to_string(),
     );
 
     // run

@@ -14,16 +14,16 @@
 
 extern crate hprof;
 
-use ast::ptr::*;
 use ast::ir::*;
+use ast::ptr::*;
 use compiler::backend;
 use compiler::backend::reg_alloc::graph_coloring;
 use compiler::backend::reg_alloc::graph_coloring::liveness::InterferenceGraph;
-use compiler::machine_code::CompiledFunction;
-use vm::VM;
-use utils::LinkedHashSet;
-use utils::LinkedHashMap;
 use compiler::backend::reg_alloc::graph_coloring::liveness::Move;
+use compiler::machine_code::CompiledFunction;
+use utils::LinkedHashMap;
+use utils::LinkedHashSet;
+use vm::VM;
 
 /// allows coalescing
 const COALESCING: bool = true;
@@ -93,7 +93,7 @@ pub struct GraphColoring<'a> {
     /// we need to log all registers get spilled with their spill location
     spill_history: LinkedHashMap<MuID, P<Value>>,
     /// we need to know the mapping between scratch temp -> original temp
-    spill_scratch_temps: LinkedHashMap<MuID, MuID>
+    spill_scratch_temps: LinkedHashMap<MuID, MuID>,
 }
 
 impl<'a> GraphColoring<'a> {
@@ -101,7 +101,7 @@ impl<'a> GraphColoring<'a> {
     pub fn start(
         func: &'a mut MuFunctionVersion,
         cf: &'a mut CompiledFunction,
-        vm: &'a VM
+        vm: &'a VM,
     ) -> GraphColoring<'a> {
         GraphColoring::start_with_spill_history(
             LinkedHashMap::new(),
@@ -109,7 +109,7 @@ impl<'a> GraphColoring<'a> {
             0,
             func,
             cf,
-            vm
+            vm,
         )
     }
 
@@ -120,7 +120,7 @@ impl<'a> GraphColoring<'a> {
         iteration_count: usize,
         func: &'a mut MuFunctionVersion,
         cf: &'a mut CompiledFunction,
-        vm: &'a VM
+        vm: &'a VM,
     ) -> GraphColoring<'a> {
         assert!(
             iteration_count < MAX_REWRITE_ITERATIONS_ALLOWED,
@@ -164,7 +164,7 @@ impl<'a> GraphColoring<'a> {
             worklist_freeze: LinkedHashSet::new(),
             frozen_moves: LinkedHashSet::new(),
             worklist_simplify: LinkedHashSet::new(),
-            select_stack: Vec::new()
+            select_stack: Vec::new(),
         };
 
         coloring.regalloc()
@@ -218,8 +218,10 @@ impl<'a> GraphColoring<'a> {
                 self.check_invariants();
             }
 
-            !(self.worklist_simplify.is_empty() && self.worklist_moves.is_empty() &&
-                  self.worklist_freeze.is_empty() && self.worklist_spill.is_empty())
+            !(self.worklist_simplify.is_empty()
+                && self.worklist_moves.is_empty()
+                && self.worklist_freeze.is_empty()
+                && self.worklist_spill.is_empty())
         } {}
 
         // pick color for nodes
@@ -248,7 +250,7 @@ impl<'a> GraphColoring<'a> {
                 self.iteration_count,
                 self.func,
                 self.cf,
-                self.vm
+                self.vm,
             );
         }
 
@@ -300,7 +302,7 @@ impl<'a> GraphColoring<'a> {
 
             self.checkinv_assert(
                 degree_u == set.len(),
-                format!("degree({})={} != set(len)={}", u, degree_u, set.len())
+                format!("degree({})={} != set(len)={}", u, degree_u, set.len()),
             );
         }
     }
@@ -320,7 +322,7 @@ impl<'a> GraphColoring<'a> {
                 let degree = self.ig.get_degree_of(*u);
                 self.checkinv_assert(
                     degree < self.n_regs_for_node(*u),
-                    format!("degree({})={} < K fails", u, degree)
+                    format!("degree({})={} < K fails", u, degree),
                 );
 
                 // 2nd cond
@@ -342,7 +344,7 @@ impl<'a> GraphColoring<'a> {
 
                 self.checkinv_assert(
                     intersect.len() == 0,
-                    format!("intersect({}) is not empty", u)
+                    format!("intersect({}) is not empty", u),
                 );
             }
         }
@@ -358,7 +360,7 @@ impl<'a> GraphColoring<'a> {
             let degree = self.ig.get_degree_of(*u);
             self.checkinv_assert(
                 degree < self.n_regs_for_node(*u),
-                format!("degree({})={} < K fails", u, degree)
+                format!("degree({})={} < K fails", u, degree),
             );
 
             // 2nd cond
@@ -390,7 +392,7 @@ impl<'a> GraphColoring<'a> {
             let degree = self.ig.get_degree_of(*u);
             self.checkinv_assert(
                 degree >= self.n_regs_for_node(*u),
-                format!("degree({})={} >= K fails", u, degree)
+                format!("degree({})={} >= K fails", u, degree),
             );
         }
     }
@@ -420,7 +422,7 @@ impl<'a> GraphColoring<'a> {
     fn add_to_movelist(
         movelist: &mut LinkedHashMap<MuID, LinkedHashSet<Move>>,
         reg: MuID,
-        mov: Move
+        mov: Move,
     ) {
         trace!("  add {:?} to movelist[{}]", mov, reg);
         if movelist.contains_key(&reg) {
@@ -730,8 +732,8 @@ impl<'a> GraphColoring<'a> {
             if !precolored_v {
                 self.add_worklist(v);
             }
-        } else if (precolored_u && self.check_ok(u, v)) ||
-                   (!precolored_u && self.check_conservative(u, v))
+        } else if (precolored_u && self.check_ok(u, v))
+            || (!precolored_u && self.check_conservative(u, v))
         {
             trace!("  ok(u, v) = {}", self.check_ok(u, v));
             trace!("  conservative(u, v) = {}", self.check_conservative(u, v));
@@ -842,8 +844,7 @@ impl<'a> GraphColoring<'a> {
             self.decrement_degree(t);
         }
 
-        if self.worklist_freeze.contains(&u) &&
-            self.ig.get_degree_of(u) >= self.n_regs_for_node(u)
+        if self.worklist_freeze.contains(&u) && self.ig.get_degree_of(u) >= self.n_regs_for_node(u)
         {
             trace!("  move {} from worklistFreeze to worklistSpill", u);
             self.worklist_freeze.remove(&u);
@@ -1081,9 +1082,10 @@ impl<'a> GraphColoring<'a> {
         for reg_id in spills.iter() {
             let ssa_entry = match self.func.context.get_value(*reg_id) {
                 Some(entry) => entry,
-                None => panic!("The spilled register {} is not in func context", reg_id)
+                None => panic!("The spilled register {} is not in func context", reg_id),
             };
-            let mem = self.cf
+            let mem = self
+                .cf
                 .frame
                 .alloc_slot_for_spilling(ssa_entry.value().clone(), self.vm);
 
@@ -1122,15 +1124,13 @@ impl<'a> GraphColoring<'a> {
                 let alias = self.get_alias(node);
                 let machine_reg = match self.ig.get_color_of(alias) {
                     Some(reg) => reg,
-                    None => {
-                        panic!(
-                            "Reg{}/{:?} (aliased as Reg{}/{:?}) is not assigned with a color",
-                            self.ig.get_temp_of(node),
-                            node,
-                            self.ig.get_temp_of(alias),
-                            alias
-                        )
-                    }
+                    None => panic!(
+                        "Reg{}/{:?} (aliased as Reg{}/{:?}) is not assigned with a color",
+                        self.ig.get_temp_of(node),
+                        node,
+                        self.ig.get_temp_of(alias),
+                        alias
+                    ),
                 };
 
                 ret.insert(temp, machine_reg);

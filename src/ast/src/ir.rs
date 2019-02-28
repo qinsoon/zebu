@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use inst::*;
 use ptr::P;
 use types::*;
-use inst::*;
 
 use utils::vec_utils;
 use utils::LinkedHashMap;
 use utils::LinkedHashSet;
 
 use std;
-use std::fmt;
-pub use std::sync::Arc;
 use std::default;
+use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
+pub use std::sync::Arc;
 
 pub type WPID = usize;
 pub type MuID = usize;
@@ -43,12 +43,12 @@ pub fn C(str: &'static str) -> CName {
 pub type OpIndex = usize;
 
 lazy_static! {
-    pub static ref MACHINE_ID : AtomicUsize = {
+    pub static ref MACHINE_ID: AtomicUsize = {
         let a = AtomicUsize::new(0);
         a.store(MACHINE_ID_START, Ordering::SeqCst);
         a
     };
-    pub static ref INTERNAL_ID : AtomicUsize = {
+    pub static ref INTERNAL_ID: AtomicUsize = {
         let a = AtomicUsize::new(0);
         a.store(INTERNAL_ID_START, Ordering::SeqCst);
         a
@@ -93,7 +93,7 @@ pub struct MuFunction {
 
     pub sig: P<MuFuncSig>,
     pub cur_ver: Option<MuID>,
-    pub all_vers: Vec<MuID>
+    pub all_vers: Vec<MuID>,
 }
 
 rodal_struct!(MuFunction {
@@ -109,7 +109,7 @@ impl MuFunction {
             hdr: entity,
             sig: sig,
             cur_ver: None,
-            all_vers: vec![]
+            all_vers: vec![],
         }
     }
 
@@ -147,7 +147,7 @@ pub struct MuFunctionVersion {
     is_compiled: bool,
     pub context: FunctionContext,
     pub force_inline: bool,
-    pub block_trace: Option<Vec<MuID>> // only available after Trace Generation Pass
+    pub block_trace: Option<Vec<MuID>>, // only available after Trace Generation Pass
 }
 rodal_struct!(Callsite {
     name,
@@ -158,18 +158,18 @@ rodal_struct!(Callsite {
 pub struct Callsite {
     pub name: MuName,
     pub exception_destination: Option<MuName>,
-    pub stack_arg_size: usize
+    pub stack_arg_size: usize,
 }
 impl Callsite {
     pub fn new(
         name: MuName,
         exception_destination: Option<MuName>,
-        stack_arg_size: usize
+        stack_arg_size: usize,
     ) -> Callsite {
         Callsite {
             name: name,
             exception_destination: exception_destination,
-            stack_arg_size: stack_arg_size
+            stack_arg_size: stack_arg_size,
         }
     }
 }
@@ -210,7 +210,7 @@ impl MuFunctionVersion {
             is_compiled: false,
             context: FunctionContext::new(),
             block_trace: None,
-            force_inline: false
+            force_inline: false,
         }
     }
 
@@ -220,7 +220,7 @@ impl MuFunctionVersion {
         id: MuID,
         sig: P<MuFuncSig>,
         content: FunctionContent,
-        context: FunctionContext
+        context: FunctionContext,
     ) -> MuFunctionVersion {
         MuFunctionVersion {
             hdr: hdr,
@@ -232,7 +232,7 @@ impl MuFunctionVersion {
             is_compiled: false,
             context: context,
             block_trace: None,
-            force_inline: false
+            force_inline: false,
         }
     }
 
@@ -264,7 +264,7 @@ impl MuFunctionVersion {
         let val = P(Value {
             hdr: entity,
             ty: ty,
-            v: Value_::SSAVar(id)
+            v: Value_::SSAVar(id),
         });
 
         self.context
@@ -272,7 +272,7 @@ impl MuFunctionVersion {
             .insert(id, SSAVarEntry::new(val.clone()));
 
         P(TreeNode {
-            v: TreeNode_::Value(val)
+            v: TreeNode_::Value(val),
         })
     }
 
@@ -282,25 +282,25 @@ impl MuFunctionVersion {
             .insert(v.id(), SSAVarEntry::new(v.clone()));
 
         P(TreeNode {
-            v: TreeNode_::Value(v)
+            v: TreeNode_::Value(v),
         })
     }
 
     pub fn new_constant(&mut self, v: P<Value>) -> P<TreeNode> {
         P(TreeNode {
-            v: TreeNode_::Value(v)
+            v: TreeNode_::Value(v),
         })
     }
 
     pub fn new_global(&mut self, v: P<Value>) -> P<TreeNode> {
         P(TreeNode {
-            v: TreeNode_::Value(v)
+            v: TreeNode_::Value(v),
         })
     }
 
     pub fn new_inst(&mut self, v: Instruction) -> P<TreeNode> {
         P(TreeNode {
-            v: TreeNode_::Instruction(v)
+            v: TreeNode_::Instruction(v),
         })
     }
 
@@ -319,25 +319,23 @@ impl MuFunctionVersion {
                     TreeNode_::Instruction(ref inst) => {
                         let ref ops = inst.ops;
                         match inst.v {
-                            Instruction_::ExprCall { ref data, .. } |
-                            Instruction_::ExprCCall { ref data, .. } |
-                            Instruction_::Call { ref data, .. } |
-                            Instruction_::CCall { ref data, .. } => {
+                            Instruction_::ExprCall { ref data, .. }
+                            | Instruction_::ExprCCall { ref data, .. }
+                            | Instruction_::Call { ref data, .. }
+                            | Instruction_::CCall { ref data, .. } => {
                                 let ref callee = ops[data.func];
 
                                 match callee.v {
                                     TreeNode_::Instruction(_) => {}
-                                    TreeNode_::Value(ref pv) => {
-                                        match &pv.v {
-                                            &Value_::Constant(Constant::FuncRef(ref func)) => {
-                                                ret.insert(
-                                                    inst.id(),
-                                                    (func.id(), inst.has_exception_clause())
-                                                );
-                                            }
-                                            _ => {}
+                                    TreeNode_::Value(ref pv) => match &pv.v {
+                                        &Value_::Constant(Constant::FuncRef(ref func)) => {
+                                            ret.insert(
+                                                inst.id(),
+                                                (func.id(), inst.has_exception_clause()),
+                                            );
                                         }
-                                    }
+                                        _ => {}
+                                    },
                                 }
                             }
                             _ => {
@@ -345,7 +343,7 @@ impl MuFunctionVersion {
                             }
                         }
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
         }
@@ -371,7 +369,7 @@ impl MuFunctionVersion {
                             return true;
                         }
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
         }
@@ -397,7 +395,7 @@ impl MuFunctionVersion {
                             }
                         }
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
         }
@@ -411,7 +409,7 @@ impl MuFunctionVersion {
 pub struct FunctionContent {
     pub entry: MuID,
     pub blocks: LinkedHashMap<MuID, Block>,
-    pub exception_blocks: LinkedHashSet<MuID> // this field only valid after control flow analysis
+    pub exception_blocks: LinkedHashSet<MuID>, // this field only valid after control flow analysis
 }
 
 impl fmt::Debug for FunctionContent {
@@ -434,7 +432,7 @@ impl FunctionContent {
         FunctionContent {
             entry: entry,
             blocks: blocks,
-            exception_blocks: LinkedHashSet::new()
+            exception_blocks: LinkedHashSet::new(),
         }
     }
 
@@ -451,7 +449,7 @@ impl FunctionContent {
         let ret = self.blocks.get(&id);
         match ret {
             Some(b) => b,
-            None => panic!("cannot find block #{}", id)
+            None => panic!("cannot find block #{}", id),
         }
     }
 
@@ -459,7 +457,7 @@ impl FunctionContent {
         let ret = self.blocks.get_mut(&id);
         match ret {
             Some(b) => b,
-            None => panic!("cannot find block #{}", id)
+            None => panic!("cannot find block #{}", id),
         }
     }
 
@@ -478,13 +476,13 @@ impl FunctionContent {
 // FIXME: should move this out of ast crate and bind its lifetime with compilation (Issue #18)
 #[derive(Default, Debug)]
 pub struct FunctionContext {
-    pub values: LinkedHashMap<MuID, SSAVarEntry>
+    pub values: LinkedHashMap<MuID, SSAVarEntry>,
 }
 
 impl FunctionContext {
     fn new() -> FunctionContext {
         FunctionContext {
-            values: LinkedHashMap::new()
+            values: LinkedHashMap::new(),
         }
     }
 
@@ -493,13 +491,13 @@ impl FunctionContext {
         let val = P(Value {
             hdr: MuEntityHeader::unnamed(id),
             ty: ty,
-            v: Value_::SSAVar(id)
+            v: Value_::SSAVar(id),
         });
 
         self.values.insert(id, SSAVarEntry::new(val.clone()));
 
         P(TreeNode {
-            v: TreeNode_::Value(val)
+            v: TreeNode_::Value(val),
         })
     }
 
@@ -507,7 +505,7 @@ impl FunctionContext {
     pub fn get_temp_display(&self, id: MuID) -> String {
         match self.get_value(id) {
             Some(entry) => format!("{}", entry.value()),
-            None => "CANT_FOUND_ID".to_string()
+            None => "CANT_FOUND_ID".to_string(),
         }
     }
 
@@ -533,7 +531,7 @@ pub struct Block {
     /// a trace scheduling hint about where to layout this block
     pub trace_hint: TraceHint,
     /// control flow info about this block (predecessors, successors, etc)
-    pub control_flow: ControlFlow
+    pub control_flow: ControlFlow,
 }
 
 impl fmt::Debug for Block {
@@ -562,7 +560,7 @@ impl Block {
             hdr: entity,
             content: None,
             trace_hint: TraceHint::None,
-            control_flow: ControlFlow::default()
+            control_flow: ControlFlow::default(),
         }
     }
 
@@ -594,16 +592,14 @@ impl Block {
     pub fn ends_with_cond_branch(&self) -> bool {
         let block: &BlockContent = self.content.as_ref().unwrap();
         match block.body.last() {
-            Some(node) => {
-                match node.v {
-                    TreeNode_::Instruction(Instruction {
-                        v: Instruction_::Branch2 { .. },
-                        ..
-                    }) => true,
-                    _ => false
-                }
-            }
-            None => false
+            Some(node) => match node.v {
+                TreeNode_::Instruction(Instruction {
+                    v: Instruction_::Branch2 { .. },
+                    ..
+                }) => true,
+                _ => false,
+            },
+            None => false,
         }
     }
 
@@ -611,16 +607,14 @@ impl Block {
     pub fn ends_with_return(&self) -> bool {
         let block: &BlockContent = self.content.as_ref().unwrap();
         match block.body.last() {
-            Some(node) => {
-                match node.v {
-                    TreeNode_::Instruction(Instruction {
-                        v: Instruction_::Return(_),
-                        ..
-                    }) => true,
-                    _ => false
-                }
-            }
-            None => false
+            Some(node) => match node.v {
+                TreeNode_::Instruction(Instruction {
+                    v: Instruction_::Return(_),
+                    ..
+                }) => true,
+                _ => false,
+            },
+            None => false,
         }
     }
 }
@@ -640,7 +634,7 @@ pub enum TraceHint {
     /// this block is slow path, and should be kept out of hot loops
     SlowPath,
     /// this block is return sink, and should be put at the end of a function
-    ReturnSink
+    ReturnSink,
 }
 
 /// ControlFlow stores compilation info about control flows of a block
@@ -648,7 +642,7 @@ pub enum TraceHint {
 #[derive(Debug, Clone)]
 pub struct ControlFlow {
     pub preds: Vec<MuID>,
-    pub succs: Vec<BlockEdge>
+    pub succs: Vec<BlockEdge>,
 }
 
 impl ControlFlow {
@@ -684,7 +678,7 @@ impl default::Default for ControlFlow {
     fn default() -> ControlFlow {
         ControlFlow {
             preds: vec![],
-            succs: vec![]
+            succs: vec![],
         }
     }
 }
@@ -695,7 +689,7 @@ pub struct BlockEdge {
     pub target: MuID,
     pub kind: EdgeKind,
     pub is_exception: bool,
-    pub probability: f32
+    pub probability: f32,
 }
 
 impl fmt::Display for BlockEdge {
@@ -714,7 +708,7 @@ impl fmt::Display for BlockEdge {
 #[derive(Copy, Clone, Debug)]
 pub enum EdgeKind {
     Forward,
-    Backward
+    Backward,
 }
 
 /// BlockContent describes arguments to this block, and owns all the IR instructions
@@ -723,7 +717,7 @@ pub struct BlockContent {
     pub args: Vec<P<Value>>,
     pub exn_arg: Option<P<Value>>,
     pub body: Vec<P<TreeNode>>,
-    pub keepalives: Option<Vec<P<Value>>>
+    pub keepalives: Option<Vec<P<Value>>>,
 }
 
 impl fmt::Debug for BlockContent {
@@ -737,7 +731,8 @@ impl fmt::Debug for BlockContent {
                 f,
                 "keepalives: {}",
                 vec_utils::as_str(self.keepalives.as_ref().unwrap())
-            ).unwrap();
+            )
+            .unwrap();
         }
         for node in self.body.iter() {
             writeln!(f, "{}", node).unwrap();
@@ -758,10 +753,10 @@ impl BlockContent {
             TreeNode_::Instruction(ref inst) => {
                 let ref ops = inst.ops;
                 match inst.v {
-                    Instruction_::Return(_) |
-                    Instruction_::ThreadExit |
-                    Instruction_::Throw(_) |
-                    Instruction_::TailCall(_) => {
+                    Instruction_::Return(_)
+                    | Instruction_::ThreadExit
+                    | Instruction_::Throw(_)
+                    | Instruction_::TailCall(_) => {
                         // they do not have explicit liveouts
                     }
                     Instruction_::Branch1(ref dest) => {
@@ -804,10 +799,10 @@ impl BlockContent {
                         live_outs.append(&mut enable_dest.get_arguments(&ops));
                         vec_utils::add_all_unique(&mut ret, &mut live_outs);
                     }
-                    Instruction_::Call { ref resume, .. } |
-                    Instruction_::CCall { ref resume, .. } |
-                    Instruction_::SwapStackExc { ref resume, .. } |
-                    Instruction_::ExnInstruction { ref resume, .. } => {
+                    Instruction_::Call { ref resume, .. }
+                    | Instruction_::CCall { ref resume, .. }
+                    | Instruction_::SwapStackExc { ref resume, .. }
+                    | Instruction_::ExnInstruction { ref resume, .. } => {
                         let mut live_outs = vec![];
                         live_outs.append(&mut resume.normal_dest.get_arguments(&ops));
                         live_outs.append(&mut resume.exn_dest.get_arguments(&ops));
@@ -826,10 +821,10 @@ impl BlockContent {
                         vec_utils::add_all_unique(&mut ret, &mut live_outs);
                     }
 
-                    _ => panic!("didn't expect last inst as {}", inst)
+                    _ => panic!("didn't expect last inst as {}", inst),
                 }
             }
-            _ => panic!("expect last treenode of block is a inst")
+            _ => panic!("expect last treenode of block is a inst"),
         }
 
         ret
@@ -840,7 +835,7 @@ impl BlockContent {
             args: self.args.clone(),
             exn_arg: self.exn_arg.clone(),
             body: vec![],
-            keepalives: self.keepalives.clone()
+            keepalives: self.keepalives.clone(),
         }
     }
 }
@@ -849,21 +844,21 @@ impl BlockContent {
 /// or an value (SSA, constant, global, etc)
 #[derive(Debug, Clone)]
 pub struct TreeNode {
-    pub v: TreeNode_
+    pub v: TreeNode_,
 }
 
 impl TreeNode {
     /// creates a sharable Instruction TreeNode
     pub fn new_inst(v: Instruction) -> P<TreeNode> {
         P(TreeNode {
-            v: TreeNode_::Instruction(v)
+            v: TreeNode_::Instruction(v),
         })
     }
 
     /// creates a sharable Value TreeNode
     pub fn new_value(v: P<Value>) -> P<TreeNode> {
         P(TreeNode {
-            v: TreeNode_::Value(v)
+            v: TreeNode_::Value(v),
         })
     }
 
@@ -871,7 +866,7 @@ impl TreeNode {
     pub fn is_inst(&self) -> bool {
         match self.v {
             TreeNode_::Instruction(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -879,7 +874,7 @@ impl TreeNode {
     pub fn is_value(&self) -> bool {
         match self.v {
             TreeNode_::Value(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -887,7 +882,7 @@ impl TreeNode {
     pub fn is_const_value(&self) -> bool {
         match self.v {
             TreeNode_::Value(ref val) => val.is_const(),
-            _ => false
+            _ => false,
         }
     }
 
@@ -895,13 +890,11 @@ impl TreeNode {
     /// if the node is not an SSA, returns None
     pub fn extract_ssa_id(&self) -> Option<MuID> {
         match self.v {
-            TreeNode_::Value(ref pv) => {
-                match pv.v {
-                    Value_::SSAVar(id) => Some(id),
-                    _ => None
-                }
-            }
-            _ => None
+            TreeNode_::Value(ref pv) => match pv.v {
+                Value_::SSAVar(id) => Some(id),
+                _ => None,
+            },
+            _ => None,
         }
     }
 
@@ -935,7 +928,7 @@ impl TreeNode {
     pub fn into_value(self) -> Option<P<Value>> {
         match self.v {
             TreeNode_::Value(val) => Some(val),
-            _ => None
+            _ => None,
         }
     }
 
@@ -943,7 +936,7 @@ impl TreeNode {
     pub fn into_inst(self) -> Option<Instruction> {
         match self.v {
             TreeNode_::Instruction(inst) => Some(inst),
-            _ => None
+            _ => None,
         }
     }
 
@@ -951,7 +944,7 @@ impl TreeNode {
     pub fn as_inst(&self) -> &Instruction {
         match &self.v {
             &TreeNode_::Instruction(ref inst) => inst,
-            _ => panic!("expected inst")
+            _ => panic!("expected inst"),
         }
     }
 
@@ -970,7 +963,7 @@ impl TreeNode {
                     panic!("expected result from the node {}", self);
                 }
             }
-            TreeNode_::Value(ref pv) => pv.ty.clone()
+            TreeNode_::Value(ref pv) => pv.ty.clone(),
         }
     }
 }
@@ -979,7 +972,7 @@ impl fmt::Display for TreeNode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.v {
             TreeNode_::Value(ref pv) => pv.fmt(f),
-            TreeNode_::Instruction(ref inst) => write!(f, "({})", inst)
+            TreeNode_::Instruction(ref inst) => write!(f, "({})", inst),
         }
     }
 }
@@ -988,7 +981,7 @@ impl fmt::Display for TreeNode {
 #[derive(Debug, Clone)]
 pub enum TreeNode_ {
     Value(P<Value>),
-    Instruction(Instruction)
+    Instruction(Instruction),
 }
 
 /// Value represents a value in the tree, it could be SSA variables, constants, globals,
@@ -1000,7 +993,7 @@ pub enum TreeNode_ {
 pub struct Value {
     pub hdr: MuEntityHeader,
     pub ty: P<MuType>,
-    pub v: Value_
+    pub v: Value_,
 }
 
 rodal_struct!(Value { hdr, ty, v });
@@ -1019,28 +1012,28 @@ impl Value {
         P(Value {
             hdr: MuEntityHeader::unnamed(id),
             ty: ty,
-            v: Value_::Constant(Constant::Int(val))
+            v: Value_::Constant(Constant::Int(val)),
         })
     }
 
     pub fn is_mem(&self) -> bool {
         match self.v {
             Value_::Memory(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_reg(&self) -> bool {
         match self.v {
             Value_::SSAVar(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_const(&self) -> bool {
         match self.v {
             Value_::Constant(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1057,7 +1050,7 @@ impl Value {
                 }
             }
             Value_::Constant(Constant::NullRef) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1068,22 +1061,21 @@ impl Value {
         P(Value {
             hdr: self.hdr.clone(),
             ty: ty,
-            v: self.v.clone()
+            v: self.v.clone(),
         })
     }
 
     pub fn is_int_ex_const(&self) -> bool {
         match self.v {
             Value_::Constant(Constant::IntEx(_)) => true,
-            _ => false
+            _ => false,
         }
     }
-
 
     pub fn is_func_const(&self) -> bool {
         match self.v {
             Value_::Constant(Constant::FuncRef(_)) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1091,7 +1083,7 @@ impl Value {
         match self.v {
             Value_::Constant(Constant::Int(_)) => true,
             Value_::Constant(Constant::NullRef) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1099,7 +1091,7 @@ impl Value {
         match self.v {
             Value_::Constant(Constant::Float(_)) => true,
             Value_::Constant(Constant::Double(_)) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -1107,28 +1099,28 @@ impl Value {
         match self.v {
             Value_::Constant(Constant::Int(val)) => Some(val),
             Value_::Constant(Constant::NullRef) => Some(0),
-            _ => None
+            _ => None,
         }
     }
 
     pub fn extract_int_ex_const(&self) -> Vec<u64> {
         match self.v {
             Value_::Constant(Constant::IntEx(ref val)) => val.clone(),
-            _ => panic!("expect int ex const")
+            _ => panic!("expect int ex const"),
         }
     }
 
     pub fn extract_ssa_id(&self) -> Option<MuID> {
         match self.v {
             Value_::SSAVar(id) => Some(id),
-            _ => None
+            _ => None,
         }
     }
 
     pub fn extract_memory_location(&self) -> Option<MemoryLocation> {
         match self.v {
             Value_::Memory(ref loc) => Some(loc.clone()),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -1156,7 +1148,7 @@ impl fmt::Display for Value {
                     }
                 }
                 Value_::Global(ref ty) => write!(f, "/*<{}>*/@{}", ty, self.hdr),
-                Value_::Memory(ref mem) => write!(f, "/*<{}>*/{}{}", self.ty, self.hdr, mem)
+                Value_::Memory(ref mem) => write!(f, "/*<{}>*/{}{}", self.ty, self.hdr, mem),
             }
         } else {
             match self.v {
@@ -1169,7 +1161,7 @@ impl fmt::Display for Value {
                     }
                 }
                 Value_::Global(_) => write!(f, "@{}", self.hdr),
-                Value_::Memory(ref mem) => write!(f, "{}{}", self.hdr, mem)
+                Value_::Memory(ref mem) => write!(f, "{}{}", self.hdr, mem),
             }
         }
     }
@@ -1181,7 +1173,7 @@ pub enum Value_ {
     SSAVar(MuID),
     Constant(Constant),
     Global(P<MuType>), // what type is this global (without IRef)
-    Memory(MemoryLocation)
+    Memory(MemoryLocation),
 }
 
 rodal_enum!(Value_{(SSAVar: id), (Constant: val), (Global: ty), (Memory: location)});
@@ -1203,7 +1195,7 @@ pub struct SSAVarEntry {
     split: Option<Vec<P<Value>>>,
 
     // which instruction defines this value
-    def: Option<P<TreeNode>>
+    def: Option<P<TreeNode>>,
 }
 
 impl SSAVarEntry {
@@ -1213,7 +1205,7 @@ impl SSAVarEntry {
             use_count: AtomicUsize::new(0),
             expr: None,
             split: None,
-            def: None
+            def: None,
         };
 
         ret.use_count.store(0, Ordering::SeqCst);
@@ -1296,7 +1288,7 @@ pub enum Constant {
     /// external symbol
     ExternSym(CName),
     /// a composite type of several constants (currently not used)
-    List(Vec<P<Value>>)
+    List(Vec<P<Value>>),
 }
 
 rodal_enum!(Constant{(Int: val), (IntEx: val), (Float: val), (Double: val), (FuncRef: val),
@@ -1353,15 +1345,15 @@ pub enum MemoryLocation {
         base: P<Value>, // +8
         offset: Option<P<Value>>,
         index: Option<P<Value>>,
-        scale: Option<u8>
+        scale: Option<u8>,
     },
     /// addr = base + label(offset)
     Symbolic {
         base: Option<P<Value>>,
         label: MuName,
         is_global: bool,
-        is_native: bool
-    }
+        is_native: bool,
+    },
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -1376,7 +1368,7 @@ impl fmt::Display for MemoryLocation {
                 ref base,
                 ref offset,
                 ref index,
-                scale
+                scale,
             } => {
                 // base
                 write!(f, "[{}", base).unwrap();
@@ -1418,7 +1410,7 @@ pub enum MemoryLocation {
         base: P<Value>, //+8
         offset: Option<P<Value>>, //+16
         signed: bool,             //+1
-        scale: u64                //+24
+        scale: u64,               //+24
     },
     Address {
         /// Must be a normal 64-bit register or SP
@@ -1429,13 +1421,13 @@ pub enum MemoryLocation {
         shift: u8,
         /// Whether offset is signed or not (only set this if offset is a register)
         /// Note: n is the number of bytes the adress refers two
-        signed: bool
+        signed: bool,
     },
     Symbolic {
         label: MuName,
         is_global: bool,
-        is_native: bool
-    }
+        is_native: bool,
+    },
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -1453,7 +1445,7 @@ impl fmt::Display for MemoryLocation {
                 ref base,
                 ref offset,
                 scale,
-                signed
+                signed,
             } => {
                 write!(f, "[{}", base).unwrap();
 
@@ -1469,7 +1461,7 @@ impl fmt::Display for MemoryLocation {
                 ref base,
                 ref offset,
                 shift,
-                signed
+                signed,
             } => {
                 write!(f, "[{}", base).unwrap();
 
@@ -1483,7 +1475,7 @@ impl fmt::Display for MemoryLocation {
                 }
                 write!(f, "]")
             }
-            &MemoryLocation::Symbolic { ref label, .. } => write!(f, "{}", label)
+            &MemoryLocation::Symbolic { ref label, .. } => write!(f, "{}", label),
         }
     }
 }
@@ -1493,16 +1485,16 @@ impl fmt::Display for MemoryLocation {
 #[derive(Debug)] // Display, PartialEq, Clone
 pub struct MuEntityHeader {
     id: MuID,
-    name: MuName
+    name: MuName,
 }
-rodal_struct!(MuEntityHeader{id, name});
+rodal_struct!(MuEntityHeader { id, name });
 pub type MuEntityRef = MuEntityHeader;
 
 impl Clone for MuEntityHeader {
     fn clone(&self) -> Self {
         MuEntityHeader {
             id: self.id,
-            name: self.name.clone()
+            name: self.name.clone(),
         }
     }
 }
@@ -1545,13 +1537,17 @@ pub fn mangle_name(name: MuName) -> String {
         // TODO: Get rid of this, since it will be triggered if a client provides a name
         // starting with "__mu" which is totally valid, it's only here for the moment to
         // debug name handling
-        panic!("Trying to mangle \"{}\", which is already mangled", name.clone());
+        panic!(
+            "Trying to mangle \"{}\", which is already mangled",
+            name.clone()
+        );
     }
 
     assert!(!name.starts_with("%"));
 
     // Note: a ':'  and '#' is only used by names generated by zebu itself
-    let name = name.replace('Z', "ZZ")
+    let name = name
+        .replace('Z', "ZZ")
         .replace('.', "Zd")
         .replace('-', "Zh")
         .replace(':', "Zc")
@@ -1572,10 +1568,14 @@ pub fn demangle_name(mut name: String) -> MuName {
         panic!("The name '{}'' is local", name);
     }
     if !name.starts_with("__mu_") {
-        panic!("Trying to demangle \"{}\", which is not mangled", name.clone());
+        panic!(
+            "Trying to demangle \"{}\", which is not mangled",
+            name.clone()
+        );
     }
     let name = name.split_at("__mu_".len()).1.to_string();
-    let name = name.replace("Za", "#")
+    let name = name
+        .replace("Za", "#")
         .replace("Zc", ":")
         .replace("Zh", "-")
         .replace("Zd", ".")
@@ -1589,7 +1589,7 @@ extern crate regex;
 pub fn demangle_text(text: &String) -> String {
     use self::regex::Regex;
 
-    lazy_static!{
+    lazy_static! {
         static ref IDENT_NAME: Regex = if cfg!(target_os = "macos") {
             Regex::new(r"___mu_\w+").unwrap()
         } else {
@@ -1607,19 +1607,18 @@ pub fn demangle_text(text: &String) -> String {
     res
 }
 
-
 impl MuEntityHeader {
     pub fn unnamed(id: MuID) -> MuEntityHeader {
         MuEntityHeader {
             id: id,
-            name: Arc::new(format!("#{}", id))
+            name: Arc::new(format!("#{}", id)),
         }
     }
 
     pub fn named(id: MuID, name: MuName) -> MuEntityHeader {
         MuEntityHeader {
             id: id,
-            name: Arc::new(name.replace('@', ""))
+            name: Arc::new(name.replace('@', "")),
         }
     }
 
@@ -1685,21 +1684,21 @@ impl MuEntity for TreeNode {
     fn id(&self) -> MuID {
         match self.v {
             TreeNode_::Instruction(ref inst) => inst.id(),
-            TreeNode_::Value(ref pv) => pv.id()
+            TreeNode_::Value(ref pv) => pv.id(),
         }
     }
 
     fn name(&self) -> MuName {
         match self.v {
             TreeNode_::Instruction(ref inst) => inst.name(),
-            TreeNode_::Value(ref pv) => pv.name()
+            TreeNode_::Value(ref pv) => pv.name(),
         }
     }
 
     fn as_entity(&self) -> &MuEntity {
         match self.v {
             TreeNode_::Instruction(ref inst) => inst.as_entity(),
-            TreeNode_::Value(ref pv) => pv.as_entity()
+            TreeNode_::Value(ref pv) => pv.as_entity(),
         }
     }
 }

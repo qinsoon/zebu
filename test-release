@@ -1,2 +1,0 @@
-#!/bin/bash
-$(ls -t ./target/release/lib-* | head -1) "$@"

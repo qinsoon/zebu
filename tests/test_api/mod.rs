@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod test_vm_version;
 mod test_tr64;
+mod test_vm_version;

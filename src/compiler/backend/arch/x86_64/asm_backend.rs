@@ -14,37 +14,37 @@
 
 #![allow(unused_variables)]
 
-use compiler::backend::AOT_EMIT_CONTEXT_FILE;
-use compiler::backend::RegGroup;
-use utils::ByteSize;
-use utils::Address;
-use utils::POINTER_SIZE;
 use compiler::backend::x86_64;
-use compiler::backend::x86_64::CodeGenerator;
-use compiler::backend::{Reg, Mem};
 use compiler::backend::x86_64::check_op_len;
+use compiler::backend::x86_64::CodeGenerator;
+use compiler::backend::RegGroup;
+use compiler::backend::AOT_EMIT_CONTEXT_FILE;
+use compiler::backend::{Mem, Reg};
 use compiler::machine_code::MachineCode;
-use vm::VM;
-use runtime::ValueLocation;
 use runtime::mm::*;
+use runtime::ValueLocation;
+use utils::Address;
+use utils::ByteSize;
+use utils::POINTER_SIZE;
+use vm::VM;
 
-use utils::vec_utils;
 use utils::string_utils;
+use utils::vec_utils;
 use utils::LinkedHashMap;
 
-use ast::ptr::P;
 use ast::ir::*;
+use ast::ptr::P;
 use ast::types;
 
-use std::str;
-use std::usize;
-use std::slice::Iter;
-use std::ops;
-use std::collections::HashSet;
-use std::sync::{RwLock, Arc};
 use std::any::Any;
-use std::path;
+use std::collections::HashSet;
 use std::io::prelude::*;
+use std::ops;
+use std::path;
+use std::slice::Iter;
+use std::str;
+use std::sync::{Arc, RwLock};
+use std::usize;
 
 /// ASMCode represents a segment of assembly machine code. Usually it is machine code for
 /// a Mu function, but it could simply be a sequence of machine code.
@@ -66,7 +66,7 @@ struct ASMCode {
     /// we only know the exact frame size after register allocation, but we need to insert
     /// frame adjust code beforehand, so we insert adjust code with an empty frame size, and
     /// patch it later
-    frame_size_patchpoints: Vec<ASMLocation>
+    frame_size_patchpoints: Vec<ASMLocation>,
 }
 
 unsafe impl Send for ASMCode {}
@@ -95,7 +95,7 @@ struct ASMInst {
     /// successors of this instruction
     succs: Vec<usize>,
     /// branch target of this instruction
-    branch: ASMBranchTarget
+    branch: ASMBranchTarget,
 }
 
 /// ASMLocation represents the location of a register/temporary in assembly code.
@@ -109,7 +109,7 @@ struct ASMLocation {
     /// length of spaces reserved for the register/temporary
     len: usize,
     /// bit-length of the register/temporary
-    oplen: usize
+    oplen: usize,
 }
 
 /// ASMBlock represents information about a basic block in assembly.
@@ -122,7 +122,7 @@ struct ASMBlock {
     /// livein reg/temp
     livein: Vec<MuID>,
     /// liveout reg/temp
-    liveout: Vec<MuID>
+    liveout: Vec<MuID>,
 }
 
 /// ASMBranchTarget represents branching control flow of machine instructions.
@@ -137,7 +137,7 @@ enum ASMBranchTarget {
     /// this instruction may throw exception to target
     PotentiallyExcepting(MuName),
     /// this instruction is a return
-    Return
+    Return,
 }
 
 /// SpillMemInfo represents inserted spilling instructions for loading/storing values
@@ -145,7 +145,7 @@ enum ASMBranchTarget {
 enum SpillMemInfo {
     Load(P<Value>),
     Store(P<Value>),
-    CalleeSaved // Callee saved record
+    CalleeSaved, // Callee saved record
 }
 
 impl ASMCode {
@@ -231,15 +231,15 @@ impl ASMCode {
     fn rewrite_insert(
         &self,
         insert_before: LinkedHashMap<usize, Vec<Box<ASMCode>>>,
-        insert_after: LinkedHashMap<usize, Vec<Box<ASMCode>>>
+        insert_after: LinkedHashMap<usize, Vec<Box<ASMCode>>>,
     ) -> Box<ASMCode> {
         trace!("insert spilling code");
         let mut ret = ASMCode {
             name: self.name.clone(),
             entry: self.entry.clone(),
             code: vec![],
-            blocks: linked_hashmap!{},
-            frame_size_patchpoints: vec![]
+            blocks: linked_hashmap! {},
+            frame_size_patchpoints: vec![],
         };
 
         // how many instructions have been inserted
@@ -296,7 +296,6 @@ impl ASMCode {
             // 3. add the inst
             ret.code.push(inst);
 
-
             // insert code after this instruction
             if insert_after.contains_key(&i) {
                 for insert in insert_after.get(&i).unwrap() {
@@ -318,7 +317,7 @@ impl ASMCode {
                     end_inst: cur_block_end,
 
                     livein: vec![],
-                    liveout: vec![]
+                    liveout: vec![],
                 };
 
                 trace!("  old block: {:?}", block);
@@ -337,7 +336,7 @@ impl ASMCode {
                 line: *location_map.get(&patchpoint.line).unwrap(),
                 index: patchpoint.index,
                 len: patchpoint.len,
-                oplen: patchpoint.oplen
+                oplen: patchpoint.oplen,
             };
 
             ret.frame_size_patchpoints.push(new_patchpoint);
@@ -660,7 +659,7 @@ impl MachineCode for ASMCode {
                     false
                 }
             }
-            None => false
+            None => false,
         }
     }
 
@@ -679,7 +678,7 @@ impl MachineCode for ASMCode {
 
                 Some(demangle_name(String::from(split[1])))
             }
-            _ => None
+            _ => None,
         }
     }
 
@@ -692,7 +691,7 @@ impl MachineCode for ASMCode {
 
                 Some(demangle_name(String::from(split[0])))
             }
-            _ => None
+            _ => None,
         }
     }
 
@@ -702,7 +701,7 @@ impl MachineCode for ASMCode {
         if let Some(inst) = self.code.get(index) {
             match inst.spill_info {
                 Some(SpillMemInfo::Load(ref p)) => Some(p.clone()),
-                _ => None
+                _ => None,
             }
         } else {
             None
@@ -715,7 +714,7 @@ impl MachineCode for ASMCode {
         if let Some(inst) = self.code.get(index) {
             match inst.spill_info {
                 Some(SpillMemInfo::Store(ref p)) => Some(p.clone()),
-                _ => None
+                _ => None,
             }
         } else {
             None
@@ -757,7 +756,7 @@ impl MachineCode for ASMCode {
                 &mut inst_to_patch.code,
                 loc.index,
                 &to_reg_string,
-                to_reg_string.len()
+                to_reg_string.len(),
             );
         }
 
@@ -774,7 +773,7 @@ impl MachineCode for ASMCode {
                 &mut inst_to_patch.code,
                 loc.index,
                 &to_reg_string,
-                to_reg_string.len()
+                to_reg_string.len(),
             );
         }
     }
@@ -793,7 +792,7 @@ impl MachineCode for ASMCode {
                     &mut asm.code,
                     loc.index,
                     &to_reg_string,
-                    to_reg_string.len()
+                    to_reg_string.len(),
                 );
             }
 
@@ -818,7 +817,7 @@ impl MachineCode for ASMCode {
                     &mut asm.code,
                     loc.index,
                     &to_reg_string,
-                    to_reg_string.len()
+                    to_reg_string.len(),
                 );
             }
 
@@ -986,7 +985,7 @@ impl MachineCode for ASMCode {
     fn get_ir_block_livein(&self, block: &str) -> Option<&Vec<MuID>> {
         match self.blocks.get(&block.to_string()) {
             Some(ref block) => Some(&block.livein),
-            None => None
+            None => None,
         }
     }
 
@@ -994,7 +993,7 @@ impl MachineCode for ASMCode {
     fn get_ir_block_liveout(&self, block: &str) -> Option<&Vec<MuID>> {
         match self.blocks.get(&block.to_string()) {
             Some(ref block) => Some(&block.liveout),
-            None => None
+            None => None,
         }
     }
 
@@ -1024,7 +1023,7 @@ impl MachineCode for ASMCode {
     fn get_block_range(&self, block: &str) -> Option<ops::Range<usize>> {
         match self.blocks.get(&block.to_string()) {
             Some(ref block) => Some(block.start_inst..block.end_inst),
-            None => None
+            None => None,
         }
     }
 
@@ -1062,7 +1061,7 @@ impl ASMInst {
             succs: vec![],
             branch: ASMBranchTarget::None,
 
-            spill_info: None
+            spill_info: None,
         }
     }
 
@@ -1073,7 +1072,7 @@ impl ASMInst {
         uses: LinkedHashMap<MuID, Vec<ASMLocation>>,
         is_mem_op_used: bool,
         target: ASMBranchTarget,
-        spill_info: Option<SpillMemInfo>
+        spill_info: Option<SpillMemInfo>,
     ) -> ASMInst {
         ASMInst {
             code: inst,
@@ -1085,7 +1084,7 @@ impl ASMInst {
             succs: vec![],
             branch: target,
 
-            spill_info: spill_info
+            spill_info: spill_info,
         }
     }
 
@@ -1101,7 +1100,7 @@ impl ASMInst {
             succs: vec![],
             branch: ASMBranchTarget::None,
 
-            spill_info: None
+            spill_info: None,
         }
     }
 }
@@ -1112,7 +1111,7 @@ impl ASMLocation {
             line: line,
             index: index,
             len: len,
-            oplen: oplen
+            oplen: oplen,
         }
     }
 }
@@ -1123,20 +1122,20 @@ impl ASMBlock {
             start_inst: usize::MAX,
             end_inst: usize::MAX,
             livein: vec![],
-            liveout: vec![]
+            liveout: vec![],
         }
     }
 }
 
 /// ASMCodeGen is the assembly backend that implements CodeGenerator.
 pub struct ASMCodeGen {
-    cur: Option<Box<ASMCode>>
+    cur: Option<Box<ASMCode>>,
 }
 
 /// placeholder in assembly code for a temporary
 const REG_PLACEHOLDER_LEN: usize = 5;
 lazy_static! {
-    pub static ref REG_PLACEHOLDER : MuName = {
+    pub static ref REG_PLACEHOLDER: MuName = {
         let blank_spaces = [' ' as u8; REG_PLACEHOLDER_LEN];
         Arc::new(format!("%{}", str::from_utf8(&blank_spaces).unwrap()))
     };
@@ -1146,7 +1145,7 @@ lazy_static! {
 //  this is a fairly random number, but a frame is something smaller than 10^10
 const FRAME_SIZE_PLACEHOLDER_LEN: usize = 10;
 lazy_static! {
-    pub static ref FRAME_SIZE_PLACEHOLDER : String = {
+    pub static ref FRAME_SIZE_PLACEHOLDER: String = {
         let blank_spaces = [' ' as u8; FRAME_SIZE_PLACEHOLDER_LEN];
         format!("{}", str::from_utf8(&blank_spaces).unwrap())
     };
@@ -1217,7 +1216,7 @@ impl ASMCodeGen {
         potentially_excepting: Option<MuName>,
         use_vec: Vec<P<Value>>,
         def_vec: Vec<P<Value>>,
-        target: Option<(MuID, ASMLocation)>
+        target: Option<(MuID, ASMLocation)>,
     ) {
         let mut uses: LinkedHashMap<MuID, Vec<ASMLocation>> = LinkedHashMap::new();
         if target.is_some() {
@@ -1245,10 +1244,9 @@ impl ASMCodeGen {
                     ASMBranchTarget::None
                 }
             },
-            None
+            None,
         )
     }
-
 
     /// appends a return instruction
     fn add_asm_ret(&mut self, code: String) {
@@ -1258,11 +1256,11 @@ impl ASMCodeGen {
         // for very long and prevents anything using those registers
         self.add_asm_inst_internal(
             code,
-            linked_hashmap!{},
-            linked_hashmap!{},
+            linked_hashmap! {},
+            linked_hashmap! {},
             false,
             ASMBranchTarget::Return,
-            None
+            None,
         );
     }
 
@@ -1270,11 +1268,11 @@ impl ASMCodeGen {
     fn add_asm_branch(&mut self, code: String, target: MuName) {
         self.add_asm_inst_internal(
             code,
-            linked_hashmap!{},
-            linked_hashmap!{},
+            linked_hashmap! {},
+            linked_hashmap! {},
             false,
             ASMBranchTarget::Unconditional(target),
-            None
+            None,
         );
     }
 
@@ -1282,11 +1280,11 @@ impl ASMCodeGen {
     fn add_asm_branch2(&mut self, code: String, target: MuName) {
         self.add_asm_inst_internal(
             code,
-            linked_hashmap!{},
-            linked_hashmap!{},
+            linked_hashmap! {},
+            linked_hashmap! {},
             false,
             ASMBranchTarget::Conditional(target),
-            None
+            None,
         );
     }
 
@@ -1296,7 +1294,7 @@ impl ASMCodeGen {
         code: String,
         defines: LinkedHashMap<MuID, Vec<ASMLocation>>,
         uses: LinkedHashMap<MuID, Vec<ASMLocation>>,
-        is_using_mem_op: bool
+        is_using_mem_op: bool,
     ) {
         self.add_asm_inst_internal(
             code,
@@ -1304,7 +1302,7 @@ impl ASMCodeGen {
             uses,
             is_using_mem_op,
             ASMBranchTarget::None,
-            None
+            None,
         )
     }
 
@@ -1314,7 +1312,7 @@ impl ASMCodeGen {
         code: String,
         defines: LinkedHashMap<MuID, Vec<ASMLocation>>,
         uses: LinkedHashMap<MuID, Vec<ASMLocation>>,
-        is_using_mem_op: bool
+        is_using_mem_op: bool,
     ) {
         self.add_asm_inst_internal(
             code,
@@ -1322,7 +1320,7 @@ impl ASMCodeGen {
             uses,
             is_using_mem_op,
             ASMBranchTarget::None,
-            Some(SpillMemInfo::CalleeSaved)
+            Some(SpillMemInfo::CalleeSaved),
         )
     }
 
@@ -1333,7 +1331,7 @@ impl ASMCodeGen {
         defines: LinkedHashMap<MuID, Vec<ASMLocation>>,
         uses: LinkedHashMap<MuID, Vec<ASMLocation>>,
         is_using_mem_op: bool,
-        spill_info: SpillMemInfo
+        spill_info: SpillMemInfo,
     ) {
         self.add_asm_inst_internal(
             code,
@@ -1341,7 +1339,7 @@ impl ASMCodeGen {
             uses,
             is_using_mem_op,
             ASMBranchTarget::None,
-            Some(spill_info)
+            Some(spill_info),
         )
     }
 
@@ -1353,7 +1351,7 @@ impl ASMCodeGen {
         uses: LinkedHashMap<MuID, Vec<ASMLocation>>,
         is_using_mem_op: bool,
         target: ASMBranchTarget,
-        spill_info: Option<SpillMemInfo>
+        spill_info: Option<SpillMemInfo>,
     ) {
         let line = self.line();
         trace!("asm: {}", demangle_text(&code));
@@ -1368,7 +1366,7 @@ impl ASMCodeGen {
             uses,
             is_using_mem_op,
             target,
-            spill_info
+            spill_info,
         ));
     }
 
@@ -1380,7 +1378,7 @@ impl ASMCodeGen {
         (
             str,
             op.extract_ssa_id().unwrap(),
-            ASMLocation::new(self.line(), loc, len, check_op_len(op))
+            ASMLocation::new(self.line(), loc, len, check_op_len(op)),
         )
     }
 
@@ -1392,7 +1390,7 @@ impl ASMCodeGen {
         (
             str,
             op.extract_ssa_id().unwrap(),
-            ASMLocation::new(self.line(), loc, len, 64)
+            ASMLocation::new(self.line(), loc, len, 64),
         )
     }
 
@@ -1416,7 +1414,7 @@ impl ASMCodeGen {
     fn prepare_mem(
         &self,
         op: &P<Value>,
-        loc: usize
+        loc: usize,
     ) -> (String, LinkedHashMap<MuID, Vec<ASMLocation>>) {
         debug_assert!(op.is_mem());
 
@@ -1435,7 +1433,7 @@ impl ASMCodeGen {
                 ref base,
                 ref offset,
                 ref index,
-                scale
+                scale,
             }) => {
                 // deal with offset
                 if offset.is_some() {
@@ -1456,7 +1454,7 @@ impl ASMCodeGen {
                             result_str.push_str(&str);
                             loc_cursor += str.len();
                         }
-                        _ => panic!("unexpected offset type: {:?}", offset)
+                        _ => panic!("unexpected offset type: {:?}", offset),
                     }
                 }
 
@@ -1493,7 +1491,7 @@ impl ASMCodeGen {
                             result_str.push_str(&str);
                             loc_cursor += str.len();
                         }
-                        _ => panic!("unexpected index type: {:?}", index)
+                        _ => panic!("unexpected index type: {:?}", index),
                     }
 
                     // scale
@@ -1516,7 +1514,7 @@ impl ASMCodeGen {
                 ref base,
                 ref label,
                 is_global,
-                is_native
+                is_native,
             }) => {
                 let label = if is_native {
                     "/*C*/".to_string() + label.as_str()
@@ -1548,11 +1546,11 @@ impl ASMCodeGen {
                     loc_cursor += 1;
                 }
             }
-            _ => panic!("expect mem location as value")
+            _ => panic!("expect mem location as value"),
         }
 
         let uses: LinkedHashMap<MuID, Vec<ASMLocation>> = {
-            let mut map: LinkedHashMap<MuID, Vec<ASMLocation>> = linked_hashmap!{};
+            let mut map: LinkedHashMap<MuID, Vec<ASMLocation>> = linked_hashmap! {};
             for i in 0..ids.len() {
                 let id = ids[i];
                 let loc = locs[i].clone();
@@ -1566,7 +1564,6 @@ impl ASMCodeGen {
             map
         };
 
-
         (result_str, uses)
     }
 
@@ -1577,7 +1574,7 @@ impl ASMCodeGen {
             32 => op,
             16 => op as i16 as i32, // truncate
             8 => op as i8 as i32,
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 
@@ -1621,11 +1618,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc]
             },
-            linked_hashmap!{},
-            false
+            linked_hashmap! {},
+            false,
         )
     }
 
@@ -1639,13 +1636,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc.clone()]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc]
             },
-            false
+            false,
         )
     }
 
@@ -1664,20 +1661,20 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{},
+            linked_hashmap! {},
             {
                 if id1 == id2 {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1, loc2]
                     }
                 } else {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1],
                         id2 => vec![loc2]
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -1696,11 +1693,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{},
-            linked_hashmap!{
+            linked_hashmap! {},
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            false
+            false,
         )
     }
 
@@ -1724,7 +1721,7 @@ impl ASMCodeGen {
             uses.insert(id1, vec![loc1]);
         }
 
-        self.add_asm_inst(asm, linked_hashmap!{}, uses, true)
+        self.add_asm_inst(asm, linked_hashmap! {}, uses, true)
     }
 
     /// emits an instruction (use 1 reg 1 mem, define none)
@@ -1746,7 +1743,7 @@ impl ASMCodeGen {
 
         let asm = format!("{} {},{}", inst, reg, mem);
 
-        self.add_asm_inst(asm, linked_hashmap!{}, uses, true)
+        self.add_asm_inst(asm, linked_hashmap! {}, uses, true)
     }
 
     /// emits an instruction (use 2 regs, define 1st reg)
@@ -1763,22 +1760,22 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
             {
                 if id1 == id2 {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1, loc2]
                     }
                 } else {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1],
                         id2 => vec![loc2]
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -1797,14 +1794,14 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2],
                 mreg => vec![]
             },
-            false
+            false,
         )
     }
 
@@ -1823,13 +1820,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1.clone()]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -1854,11 +1851,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
             uses,
-            true
+            true,
         )
     }
 
@@ -1875,14 +1872,14 @@ impl ASMCodeGen {
         let (reg1, id1, loc1) = self.prepare_reg(src1, inst.len() + 1 + 1 + mreg_name.len() + 1);
         let (reg2, id2, loc2) = self.prepare_reg(
             dest,
-            inst.len() + 1 + 1 + mreg_name.len() + 1 + reg1.len() + 1
+            inst.len() + 1 + 1 + mreg_name.len() + 1 + reg1.len() + 1,
         );
 
         let asm = format!("{} %{},{},{}", inst, mreg_name, reg1, reg2);
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
             {
@@ -1899,7 +1896,7 @@ impl ASMCodeGen {
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -1915,11 +1912,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            linked_hashmap!{},
-            false
+            linked_hashmap! {},
+            false,
         )
     }
 
@@ -1934,13 +1931,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -1955,13 +1952,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -1979,13 +1976,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2004,11 +2001,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            linked_hashmap!{},
-            false
+            linked_hashmap! {},
+            false,
         )
     }
 
@@ -2019,7 +2016,7 @@ impl ASMCodeGen {
         dest: Reg,
         src: Mem,
         is_spill_related: bool,
-        is_callee_saved: bool
+        is_callee_saved: bool,
     ) {
         let len = check_op_len(dest);
 
@@ -2034,30 +2031,30 @@ impl ASMCodeGen {
         if is_callee_saved {
             self.add_asm_inst_with_callee_saved(
                 asm,
-                linked_hashmap!{
-                    id2 => vec![loc2]
-                },
-                uses,
-                true
-            )
-        } else if is_spill_related {
-            self.add_asm_inst_with_spill(
-                asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     id2 => vec![loc2]
                 },
                 uses,
                 true,
-                SpillMemInfo::Load(src.clone())
+            )
+        } else if is_spill_related {
+            self.add_asm_inst_with_spill(
+                asm,
+                linked_hashmap! {
+                    id2 => vec![loc2]
+                },
+                uses,
+                true,
+                SpillMemInfo::Load(src.clone()),
             )
         } else {
             self.add_asm_inst(
                 asm,
                 linked_hashmap! {
-                id2 => vec![loc2]
-            },
+                    id2 => vec![loc2]
+                },
                 uses,
-                true
+                true,
             )
         }
     }
@@ -2069,7 +2066,7 @@ impl ASMCodeGen {
         dest: Mem,
         src: Reg,
         is_spill_related: bool,
-        is_callee_saved: bool
+        is_callee_saved: bool,
     ) {
         let len = check_op_len(src);
 
@@ -2091,17 +2088,17 @@ impl ASMCodeGen {
         let asm = format!("{} {},{}", inst, reg, mem);
 
         if is_callee_saved {
-            self.add_asm_inst_with_callee_saved(asm, linked_hashmap!{}, uses, true)
+            self.add_asm_inst_with_callee_saved(asm, linked_hashmap! {}, uses, true)
         } else if is_spill_related {
             self.add_asm_inst_with_spill(
                 asm,
-                linked_hashmap!{},
+                linked_hashmap! {},
                 uses,
                 true,
-                SpillMemInfo::Store(dest.clone())
+                SpillMemInfo::Store(dest.clone()),
             )
         } else {
-            self.add_asm_inst(asm, linked_hashmap!{}, uses, true)
+            self.add_asm_inst(asm, linked_hashmap! {}, uses, true)
         }
     }
 
@@ -2115,7 +2112,7 @@ impl ASMCodeGen {
 
         let asm = format!("{} ${},{}", inst, imm, mem);
 
-        self.add_asm_inst(asm, linked_hashmap!{}, uses, true)
+        self.add_asm_inst(asm, linked_hashmap! {}, uses, true)
     }
 
     /// emits a move instruction (fpreg -> fpreg)
@@ -2129,13 +2126,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2151,21 +2148,21 @@ impl ASMCodeGen {
         if is_spill_related {
             self.add_asm_inst_with_spill(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     id2 => vec![loc2]
                 },
                 uses,
                 true,
-                SpillMemInfo::Load(src.clone())
+                SpillMemInfo::Load(src.clone()),
             )
         } else {
             self.add_asm_inst(
                 asm,
                 linked_hashmap! {
-                id2 => vec![loc2]
-            },
+                    id2 => vec![loc2]
+                },
                 uses,
-                true
+                true,
             )
         }
     }
@@ -2190,13 +2187,13 @@ impl ASMCodeGen {
         if is_spill_related {
             self.add_asm_inst_with_spill(
                 asm,
-                linked_hashmap!{},
+                linked_hashmap! {},
                 uses,
                 true,
-                SpillMemInfo::Store(dest.clone())
+                SpillMemInfo::Store(dest.clone()),
             )
         } else {
-            self.add_asm_inst(asm, linked_hashmap!{}, uses, true)
+            self.add_asm_inst(asm, linked_hashmap! {}, uses, true)
         }
     }
 
@@ -2211,20 +2208,20 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{},
+            linked_hashmap! {},
             {
                 if id1 == id2 {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1, loc2]
                     }
                 } else {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1],
                         id2 => vec![loc2]
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -2239,12 +2236,12 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
             {
                 if id1 == id2 {
-                    linked_hashmap!{id1 => vec![loc1, loc2]}
+                    linked_hashmap! {id1 => vec![loc1, loc2]}
                 } else {
                     linked_hashmap! {
                         id1 => vec![loc1],
@@ -2252,7 +2249,7 @@ impl ASMCodeGen {
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -2270,11 +2267,11 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc]
             },
             uses,
-            true
+            true,
         )
     }
 
@@ -2292,13 +2289,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2316,13 +2313,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2338,13 +2335,13 @@ impl ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2377,7 +2374,7 @@ fn op_postfix(op_len: usize) -> &'static str {
         16 => "w",
         32 => "l",
         64 => "q",
-        _ => panic!("unexpected op size: {}", op_len)
+        _ => panic!("unexpected op size: {}", op_len),
     }
 }
 
@@ -2387,8 +2384,8 @@ impl CodeGenerator for ASMCodeGen {
             name: func_name.clone(),
             entry: entry,
             code: vec![],
-            blocks: linked_hashmap!{},
-            frame_size_patchpoints: vec![]
+            blocks: linked_hashmap! {},
+            frame_size_patchpoints: vec![],
         }));
 
         // to link with C sources via gcc
@@ -2403,7 +2400,7 @@ impl CodeGenerator for ASMCodeGen {
 
     fn finish_code(
         &mut self,
-        func_name: MuName
+        func_name: MuName,
     ) -> (Box<MachineCode + Sync + Send>, ValueLocation) {
         let func_end = {
             let mut symbol = (*func_name).clone();
@@ -2415,7 +2412,7 @@ impl CodeGenerator for ASMCodeGen {
         self.cur.as_mut().unwrap().control_flow_analysis();
         (
             self.cur.take().unwrap(),
-            ValueLocation::Relocatable(RegGroup::GPR, func_end)
+            ValueLocation::Relocatable(RegGroup::GPR, func_end),
         )
     }
 
@@ -2424,8 +2421,8 @@ impl CodeGenerator for ASMCodeGen {
             name: Arc::new("snippet".to_string()),
             entry: Arc::new("none".to_string()),
             code: vec![],
-            blocks: linked_hashmap!{},
-            frame_size_patchpoints: vec![]
+            blocks: linked_hashmap! {},
+            frame_size_patchpoints: vec![],
         }));
     }
 
@@ -2470,12 +2467,10 @@ impl CodeGenerator for ASMCodeGen {
             Some(ref mut block) => {
                 block.end_inst = line;
             }
-            None => {
-                panic!(
-                    "trying to end block {} which hasnt been started",
-                    block_name
-                )
-            }
+            None => panic!(
+                "trying to end block {} which hasnt been started",
+                block_name
+            ),
         }
     }
 
@@ -2506,14 +2501,18 @@ impl CodeGenerator for ASMCodeGen {
 
         // record the placeholder position so we can patch it later
         let line = self.line();
-        self.cur_mut()
-            .add_frame_size_patchpoint(ASMLocation::new(line, 7, FRAME_SIZE_PLACEHOLDER_LEN, 0));
+        self.cur_mut().add_frame_size_patchpoint(ASMLocation::new(
+            line,
+            7,
+            FRAME_SIZE_PLACEHOLDER_LEN,
+            0,
+        ));
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{}, // let reg alloc ignore this instruction
-            linked_hashmap!{},
-            false
+            linked_hashmap! {}, // let reg alloc ignore this instruction
+            linked_hashmap! {},
+            false,
         )
     }
 
@@ -2522,7 +2521,7 @@ impl CodeGenerator for ASMCodeGen {
 
         let asm = String::from("nop");
 
-        self.add_asm_inst(asm, linked_hashmap!{}, linked_hashmap!{}, false);
+        self.add_asm_inst(asm, linked_hashmap! {}, linked_hashmap! {}, false);
     }
 
     // cmp
@@ -2612,13 +2611,13 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2636,13 +2635,13 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id1 => vec![loc1]
             },
-            false
+            false,
         )
     }
 
@@ -2901,7 +2900,7 @@ impl CodeGenerator for ASMCodeGen {
                     id => vec![loc],
                     rax => vec![]
                 },
-                false
+                false,
             )
         } else {
             trace!("emit: {} al, {} -> ax", inst, src);
@@ -2914,7 +2913,7 @@ impl CodeGenerator for ASMCodeGen {
                     id => vec![loc],
                     rax => vec![]
                 },
-                false
+                false,
             )
         }
     }
@@ -2947,16 +2946,16 @@ impl CodeGenerator for ASMCodeGen {
             );
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     rdx => vec![],
                     rax => vec![],
                 },
-                linked_hashmap!{
+                linked_hashmap! {
                     id => vec![loc],
                     rdx => vec![],
                     rax => vec![]
                 },
-                false
+                false,
             )
         } else {
             trace!(
@@ -2969,16 +2968,16 @@ impl CodeGenerator for ASMCodeGen {
 
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     ah => vec![],
                     al => vec![]
                 },
-                linked_hashmap!{
+                linked_hashmap! {
                     id => vec![loc],
                     ah => vec![],
                     al => vec![]
                 },
-                false
+                false,
             )
         }
     }
@@ -3015,7 +3014,7 @@ impl CodeGenerator for ASMCodeGen {
                     rax => vec![]
                 },
                 uses,
-                true
+                true,
             )
         } else {
             trace!(
@@ -3037,12 +3036,12 @@ impl CodeGenerator for ASMCodeGen {
 
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     ah => vec![],
                     al => vec![]
                 },
                 uses,
-                false
+                false,
             )
         }
     }
@@ -3066,16 +3065,16 @@ impl CodeGenerator for ASMCodeGen {
 
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     rdx => vec![],
                     rax => vec![],
                 },
-                linked_hashmap!{
+                linked_hashmap! {
                     id => vec![loc],
                     rdx => vec![],
                     rax => vec![]
                 },
-                false
+                false,
             )
         } else {
             trace!(
@@ -3089,16 +3088,16 @@ impl CodeGenerator for ASMCodeGen {
 
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     ah => vec![],
                     al => vec![]
                 },
-                linked_hashmap!{
+                linked_hashmap! {
                     id => vec![loc],
                     ah => vec![],
                     al => vec![]
                 },
-                false
+                false,
             )
         }
     }
@@ -3135,7 +3134,7 @@ impl CodeGenerator for ASMCodeGen {
                     rax => vec![]
                 },
                 uses,
-                true
+                true,
             )
         } else {
             trace!(
@@ -3157,12 +3156,12 @@ impl CodeGenerator for ASMCodeGen {
 
             self.add_asm_inst(
                 asm,
-                linked_hashmap!{
+                linked_hashmap! {
                     ah => vec![],
                     al => vec![]
                 },
                 uses,
-                false
+                false,
             )
         }
     }
@@ -3209,14 +3208,14 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 rdx => vec![],
                 rax => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 rax => vec![]
             },
-            false
+            false,
         )
     }
 
@@ -3230,14 +3229,14 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 edx => vec![],
                 eax => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 eax => vec![],
             },
-            false
+            false,
         )
     }
 
@@ -3251,14 +3250,14 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 dx => vec![],
                 ax => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 ax => vec![],
             },
-            false
+            false,
         )
     }
 
@@ -3354,7 +3353,7 @@ impl CodeGenerator for ASMCodeGen {
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
         defs: Vec<P<Value>>,
-        is_native: bool
+        is_native: bool,
     ) -> ValueLocation {
         let func = if is_native {
             trace!("emit: call /*C*/ {}({:?})", func, uses);
@@ -3382,7 +3381,7 @@ impl CodeGenerator for ASMCodeGen {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation {
         trace!("emit: call {}", func);
         let (reg, id, loc) = self.prepare_reg(func, 6);
@@ -3402,7 +3401,7 @@ impl CodeGenerator for ASMCodeGen {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation {
         trace!("emit: call {}", func);
         unimplemented!()
@@ -3415,7 +3414,7 @@ impl CodeGenerator for ASMCodeGen {
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
         defs: Vec<P<Value>>,
-        is_native: bool
+        is_native: bool,
     ) -> ValueLocation {
         let func = if is_native {
             trace!("emit: call/jmp /*C*/ {}({:?})", func, uses);
@@ -3443,7 +3442,7 @@ impl CodeGenerator for ASMCodeGen {
         func: &P<Value>,
         pe: Option<MuName>,
         uses: Vec<P<Value>>,
-        defs: Vec<P<Value>>
+        defs: Vec<P<Value>>,
     ) -> ValueLocation {
         trace!("emit: call/jmp {}", func);
         let (reg, id, loc) = self.prepare_reg(func, 6);
@@ -3467,7 +3466,7 @@ impl CodeGenerator for ASMCodeGen {
         trace!("emit: mfence");
 
         let asm = format!("mfence");
-        self.add_asm_inst(asm, linked_hashmap!{}, linked_hashmap!{}, false);
+        self.add_asm_inst(asm, linked_hashmap! {}, linked_hashmap! {}, false);
     }
 
     fn emit_push_r64(&mut self, src: &P<Value>) {
@@ -3479,14 +3478,14 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 rsp => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc],
                 rsp => vec![]
             },
-            false
+            false,
         )
     }
 
@@ -3498,13 +3497,13 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 rsp => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 rsp => vec![]
             },
-            false
+            false,
         )
     }
 
@@ -3517,14 +3516,14 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id => vec![loc.clone()],
                 rsp => vec![]
             },
-            linked_hashmap!{
+            linked_hashmap! {
                 rsp => vec![]
             },
-            false
+            false,
         )
     }
 
@@ -3707,11 +3706,11 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
             uses,
-            true
+            true,
         )
     }
     // substract packed double-fp
@@ -3727,11 +3726,11 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2]
             },
             uses,
-            true
+            true,
         )
     }
     // packed double-fp horizontal add
@@ -3745,20 +3744,20 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
             {
                 if id1 == id2 {
-                    linked_hashmap!{id1 => vec![loc1, loc2]}
+                    linked_hashmap! {id1 => vec![loc1, loc2]}
                 } else {
-                    linked_hashmap!{
+                    linked_hashmap! {
                         id1 => vec![loc1],
                         id2 => vec![loc2]
                     }
                 }
             },
-            false
+            false,
         )
     }
 
@@ -3776,11 +3775,11 @@ impl CodeGenerator for ASMCodeGen {
 
         self.add_asm_inst(
             asm,
-            linked_hashmap!{
+            linked_hashmap! {
                 id2 => vec![loc2.clone()]
             },
             uses,
-            true
+            true,
         )
     }
 }
@@ -3807,14 +3806,12 @@ pub fn emit_code(fv: &mut MuFunctionVersion, vm: &VM) {
     file_path.push((*func.name()).clone() + ".S");
     {
         let mut file = match File::create(file_path.as_path()) {
-            Err(why) => {
-                panic!(
-                    "couldn't create emission file {}: {}",
-                    file_path.to_str().unwrap(),
-                    why
-                )
-            }
-            Ok(file) => file
+            Err(why) => panic!(
+                "couldn't create emission file {}: {}",
+                file_path.to_str().unwrap(),
+                why
+            ),
+            Ok(file) => file,
         };
         // constants in text section
         file.write("\t.text\n".as_bytes()).unwrap();
@@ -3828,14 +3825,12 @@ pub fn emit_code(fv: &mut MuFunctionVersion, vm: &VM) {
         // write code
         let code = cf.mc.as_ref().unwrap().emit();
         match file.write_all(code.as_slice()) {
-            Err(why) => {
-                panic!(
-                    "couldn'd write to file {}: {}",
-                    file_path.to_str().unwrap(),
-                    why
-                )
-            }
-            Ok(_) => info!("emit code to {}", file_path.to_str().unwrap())
+            Err(why) => panic!(
+                "couldn'd write to file {}: {}",
+                file_path.to_str().unwrap(),
+                why
+            ),
+            Ok(_) => info!("emit code to {}", file_path.to_str().unwrap()),
         }
     }
     info!("write demangled code...");
@@ -3846,42 +3841,34 @@ pub fn emit_code(fv: &mut MuFunctionVersion, vm: &VM) {
         demangled_path.push((*func.name()).clone() + ".demangled.S");
 
         let mut demangled_file = match File::create(demangled_path.as_path()) {
-            Err(why) => {
-                panic!(
-                    "couldn't create demangled emission file {}: {}",
-                    demangled_path.to_str().unwrap(),
-                    why
-                )
-            }
-            Ok(file) => file
+            Err(why) => panic!(
+                "couldn't create demangled emission file {}: {}",
+                demangled_path.to_str().unwrap(),
+                why
+            ),
+            Ok(file) => file,
         };
         let mut mangled_file = match File::open(file_path.as_path()) {
-            Err(why) => {
-                panic!(
-                    "couldn't create demangled emission file {}: {}",
-                    demangled_path.to_str().unwrap(),
-                    why
-                )
-            }
-            Ok(file) => file
+            Err(why) => panic!(
+                "couldn't create demangled emission file {}: {}",
+                demangled_path.to_str().unwrap(),
+                why
+            ),
+            Ok(file) => file,
         };
         let mut f = String::new();
         mangled_file.read_to_string(&mut f).unwrap();
         let d = demangle_text(&f);
         match demangled_file.write_all(d.as_bytes()) {
-            Err(why) => {
-                panic!(
-                    "couldn'd write to file {}: {}",
-                    demangled_path.to_str().unwrap(),
-                    why
-                )
-            }
-            Ok(_) => {
-                info!(
-                    "emit demangled code to {}",
-                    demangled_path.to_str().unwrap()
-                )
-            }
+            Err(why) => panic!(
+                "couldn'd write to file {}: {}",
+                demangled_path.to_str().unwrap(),
+                why
+            ),
+            Ok(_) => info!(
+                "emit demangled code to {}",
+                demangled_path.to_str().unwrap()
+            ),
         }
     }
 }
@@ -3899,7 +3886,6 @@ fn check_align(align: ByteSize) -> ByteSize {
 }
 
 /// writes alignment in bytes for linux
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "linux")]
 fn write_align(f: &mut File, align: ByteSize) {
     use std::io::Write;
@@ -3909,7 +3895,6 @@ fn write_align(f: &mut File, align: ByteSize) {
 
 /// writes alignment for macos. For macos, .align is followed by exponent
 /// (e.g. 16 bytes is 2^4, writes .align 4 on macos)
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "macos")]
 fn write_align(f: &mut File, align: ByteSize) {
     use std::io::Write;
@@ -3918,18 +3903,10 @@ fn write_align(f: &mut File, align: ByteSize) {
     let align = check_align(align);
     let n = match is_power_of_two(align) {
         Some(n) => n,
-        _ => panic!("alignments needs to be power fo 2, alignment is {}", align)
+        _ => panic!("alignments needs to be power fo 2, alignment is {}", align),
     };
 
     f.write_fmt(format_args!("\t.align {}\n", n)).unwrap();
-}
-
-/// writes alignment in bytes for sel4-rumprun, which is exactly the same as Linux
-#[cfg(feature = "sel4-rumprun")]
-fn write_align(f: &mut File, align: ByteSize) {
-    use std::io::Write;
-    f.write_fmt(format_args!("\t.align {}\n", check_align(align)))
-        .unwrap();
 }
 
 /// writes a constant to assembly output
@@ -3939,13 +3916,10 @@ fn write_const(f: &mut File, constant: P<Value>, loc: P<Value>) {
     // label
     let label = match loc.v {
         Value_::Memory(MemoryLocation::Symbolic { ref label, .. }) => label.clone(),
-        _ => {
-            panic!(
-                "expecing a symbolic memory location for constant {}, found {}",
-                constant,
-                loc
-            )
-        }
+        _ => panic!(
+            "expecing a symbolic memory location for constant {}, found {}",
+            constant, loc
+        ),
     };
     write_align(f, MAX_ALIGN);
     writeln!(f, "{}:", symbol(&mangle_name(label))).unwrap();
@@ -3962,30 +3936,26 @@ fn write_const_value(f: &mut File, constant: P<Value>) {
 
     let inner = match constant.v {
         Value_::Constant(ref c) => c,
-        _ => panic!("expected constant, found {}", constant)
+        _ => panic!("expected constant, found {}", constant),
     };
 
     match inner {
         &Constant::Int(val) => {
             let len = ty.get_int_length().unwrap();
             match len {
-                8 => {
-                    f.write_fmt(format_args!("\t.byte {}\n", val as u8))
-                        .unwrap()
-                }
-                16 => {
-                    f.write_fmt(format_args!("\t.word {}\n", val as u16))
-                        .unwrap()
-                }
-                32 => {
-                    f.write_fmt(format_args!("\t.long {}\n", val as u32))
-                        .unwrap()
-                }
-                64 => {
-                    f.write_fmt(format_args!("\t.quad {}\n", val as u64))
-                        .unwrap()
-                }
-                _ => panic!("unimplemented int length: {}", len)
+                8 => f
+                    .write_fmt(format_args!("\t.byte {}\n", val as u8))
+                    .unwrap(),
+                16 => f
+                    .write_fmt(format_args!("\t.word {}\n", val as u16))
+                    .unwrap(),
+                32 => f
+                    .write_fmt(format_args!("\t.long {}\n", val as u32))
+                    .unwrap(),
+                64 => f
+                    .write_fmt(format_args!("\t.quad {}\n", val as u64))
+                    .unwrap(),
+                _ => panic!("unimplemented int length: {}", len),
             }
         }
         &Constant::IntEx(ref val) => {
@@ -4012,11 +3982,10 @@ fn write_const_value(f: &mut File, constant: P<Value>) {
                 write_const_value(f, val.clone())
             }
         }
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }
 
-#[cfg(not(feature = "sel4-rumprun"))]
 pub fn emit_sym_table(vm: &VM) {
     debug!("Currently nothing to emit for --!");
 }
@@ -4032,129 +4001,6 @@ fn mangle_all(name_vec: &mut Vec<String>) {
     }
 }
 
-#[cfg(feature = "sel4-rumprun")]
-pub fn emit_sym_table(vm: &VM) {
-    // Here goes the code to generate an asm file to resolve symbol addresses at link time
-    // in this stage, a single sym_file is generated for the test
-    // these sym_files will be compiled in build.rs in the parent directory of sel4 side
-
-    //**************************************************
-    // first create the asm file in the correct path
-    // _st added file name and path stands for _SymTable
-    //*************************************************
-    debug!("Going to emit Sym table for sel4-rumprun");
-    let mut file_path_st = path::PathBuf::new();
-    file_path_st.push(&vm.vm_options.flag_aot_emit_dir);
-
-    // vm file name is: "mu_sym_table.s"
-    file_path_st.push(format!("{}", AOT_EMIT_SYM_TABLE_FILE));
-
-    let mut file_st = match File::create(file_path_st.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create SYM TABLE file {}: {}",
-                file_path_st.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
-    };
-
-    // **************************************************
-    // mu_sym_table.s content generation
-    // *************************************************
-    // Code for exporting all of the required symbols \
-    // in vm, using the following fields:
-    // compiled_funcs.CompiledFunction.start
-    // compiled_funcs.CompiledFunction.end
-    // compiled_funcs.CompiledFunction.Frame. \
-    // exception_callsites[iter](src,_)
-    // compiled_funcs.CompiledFunction.Frame. \
-    // exception_callsites[iter](_,dest)
-    // ret
-    // *************************************************
-
-    let mut sym_vec: Vec<String> = Vec::new();
-    let compiled_funcs: &HashMap<_, _> = &vm.compiled_funcs().read().unwrap();
-    for (theID, theCFs) in compiled_funcs.iter() {
-        let theCF: &CompiledFunction = &theCFs.read().unwrap();
-        match theCF.start {
-            // CF.start can only be relocatable , otherwise panic
-            ValueLocation::Relocatable(_, ref symbol) => {
-                //                debug!("theCF.start, symbol = {}\n", *symbol);
-                sym_vec.push((*symbol).clone());
-            }
-            // CF.start can't reach this state
-            _ => {
-                panic!(
-                    "Sym_Table_start: expecting Relocatable location, found {}",
-                    theCF.start
-                )
-            }
-        }
-        match theCF.end {
-            // CF.start can only be relocatable , otherwise panic
-            ValueLocation::Relocatable(_, ref symbol) => {
-                //                debug!("theCF.end, symbol = {}\n", *symbol);
-                sym_vec.push((*symbol).clone());
-            }
-            // CF.end can't reach this state
-            _ => {
-                panic!(
-                    "Sym_Table_end: expecting Relocatable location, found {}",
-                    theCF.end
-                )
-            }
-        }
-
-        // for &(ref callsite, ref dest) in theCF.frame.get_exception_callsites().iter(){
-        //     match *callsite {
-        //         ValueLocation::Relocatable(_, ref symbol) => {
-        //             sym_vec.push((*symbol).clone());
-        //         },
-        //         // can't reach this state
-        //         _ => panic!("Sym_Table_callsite: expecting Relocatable location, found {}",
-        //                callsite)
-        //     }
-        //     match *dest {
-        //         ValueLocation::Relocatable(_, ref symbol) => {
-        //             sym_vec.push((*symbol).clone());
-        //         },
-        //         // can't reach this state
-        //         _ => panic!("Sym_Table_callsite: expecting Relocatable location, found {}",
-        //                       dest)
-        //     }
-        // }
-    }
-
-    mangle_all(&mut sym_vec);
-
-    file_st.write("\t.data\n".as_bytes()).unwrap();
-
-    file_st
-        .write_fmt(format_args!(
-            "\t{}\n",
-            directive_globl("mu_sym_table".to_string())
-        ))
-        .unwrap();
-    file_st.write_fmt(format_args!("mu_sym_table:\n")).unwrap();
-    file_st
-        .write_fmt(format_args!(".quad {}\n", sym_vec.len()))
-        .unwrap();
-    for i in 0..sym_vec.len() {
-        file_st
-            .write_fmt(format_args!(".quad {}\n", sym_vec[i].len()))
-            .unwrap();
-        file_st
-            .write_fmt(format_args!(".ascii \"{}\"\n", sym_vec[i]))
-            .unwrap();
-        file_st
-            .write_fmt(format_args!(".quad {}\n", sym_vec[i]))
-            .unwrap();
-    }
-}
-
-
 use std::collections::HashMap;
 
 /// emit vm context for current session, considering relocation symbols/fields from the client
@@ -4162,7 +4008,7 @@ pub fn emit_context_with_reloc(
     vm: &VM,
     symbols: HashMap<Address, MuName>,
     fields: HashMap<Address, MuName>,
-    primordial_threadlocal: Option<Address>
+    primordial_threadlocal: Option<Address>,
 ) {
     // creates emit directy, and file
     debug!("---Emit VM Context---");
@@ -4171,14 +4017,12 @@ pub fn emit_context_with_reloc(
     file_path.push(&vm.vm_options.flag_aot_emit_dir);
     file_path.push(AOT_EMIT_CONTEXT_FILE);
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create context file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create context file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
 
     // --- bss section ---
@@ -4249,7 +4093,8 @@ pub fn emit_context_with_reloc(
                         file,
                         "\t{}",
                         directive_equiv(demangled_name, global_cell_name.clone())
-                    ).unwrap();
+                    )
+                    .unwrap();
                 }
             }
 
@@ -4279,13 +4124,11 @@ pub fn emit_context_with_reloc(
                         // get the relocatable label
                         let label = match relocatable_refs.get(&load_ref) {
                             Some(label) => label,
-                            None => {
-                                panic!(
-                                    "cannot find label for address {}, it is not dumped by GC \
-                                     (why GC didn't trace to it?)",
-                                    load_ref
-                                )
-                            }
+                            None => panic!(
+                                "cannot find label for address {}, it is not dumped by GC \
+                                 (why GC didn't trace to it?)",
+                                load_ref
+                            ),
                         };
                         file.write_fmt(format_args!("\t.quad {}\n", symbol(&label)))
                             .unwrap();
@@ -4299,7 +4142,8 @@ pub fn emit_context_with_reloc(
                     file.write_fmt(format_args!(
                         "\t.quad {}\n",
                         symbol(&mangle_name(label.clone()))
-                    )).unwrap();
+                    ))
+                    .unwrap();
                 } else {
                     // otherwise this offset is plain data
 
@@ -4352,7 +4196,7 @@ pub fn emit_context_with_reloc(
 /// emit vm context for current session,
 /// without consideration about relocation symbols/fields from the client
 pub fn emit_context(vm: &VM) {
-    emit_context_with_reloc(vm, hashmap!{}, hashmap!{}, None);
+    emit_context_with_reloc(vm, hashmap! {}, hashmap! {}, None);
 }
 
 /// writes header for a dumped object
@@ -4404,41 +4248,25 @@ fn directive_comm(name: String, size: ByteSize, align: ByteSize) -> String {
 }
 
 /// returns symbol for a string (on linux, returns the same string)
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "linux")]
 pub fn symbol(name: &String) -> String {
     name.clone()
 }
 /// returns symbol for a string (on macos, prefixes it with a understore (_))
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "macos")]
 pub fn symbol(name: &String) -> String {
     format!("_{}", name)
 }
 
-/// returns symbol for a string (on sel4-rumprun, returns the same string)
-#[cfg(feature = "sel4-rumprun")]
-pub fn symbol(name: &String) -> String {
-    name.clone()
-}
-
 /// returns a position-indepdent symbol for a string (on linux, postfixes it with @GOTPCREL)
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "linux")]
 pub fn pic_symbol(name: &String) -> String {
     format!("{}@GOTPCREL", name)
 }
 /// returns a position-indepdent symbol for a string (on macos, returns the same string)
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "macos")]
 pub fn pic_symbol(name: &String) -> String {
     symbol(&name)
-}
-
-/// returns a position-indepdent symbol for a string (on sel4-rumprun, postfixes it with @GOTPCREL)
-#[cfg(feature = "sel4-rumprun")]
-pub fn pic_symbol(name: &String) -> String {
-    format!("{}@GOTPCREL", name)
 }
 
 use compiler::machine_code::CompiledFunction;
@@ -4449,7 +4277,7 @@ pub fn spill_rewrite(
     spills: &LinkedHashMap<MuID, P<Value>>,
     func: &mut MuFunctionVersion,
     cf: &mut CompiledFunction,
-    vm: &VM
+    vm: &VM,
 ) -> LinkedHashMap<MuID, MuID> {
     trace!("spill rewrite for x86_64 asm backend");
 
@@ -4484,7 +4312,8 @@ pub fn spill_rewrite(
 
                     // generate a random new temporary
                     let temp_ty = val_reg.ty.clone();
-                    let temp = func.new_ssa(MuEntityHeader::unnamed(vm.next_id()), temp_ty.clone())
+                    let temp = func
+                        .new_ssa(MuEntityHeader::unnamed(vm.next_id()), temp_ty.clone())
                         .clone_value();
 
                     // maintain mapping
@@ -4540,9 +4369,9 @@ pub fn spill_rewrite(
                         temp_for_cur_inst.get(&reg).unwrap().clone()
                     } else {
                         let temp_ty = val_reg.ty.clone();
-                        let temp =
-                            func.new_ssa(MuEntityHeader::unnamed(vm.next_id()), temp_ty.clone())
-                                .clone_value();
+                        let temp = func
+                            .new_ssa(MuEntityHeader::unnamed(vm.next_id()), temp_ty.clone())
+                            .clone_value();
 
                         spilled_scratch_temps.insert(temp.id(), reg);
 

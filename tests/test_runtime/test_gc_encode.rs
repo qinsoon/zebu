@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use mu::ast::ir::*;
-use mu::ast::types::*;
 use mu::ast::ptr::*;
-use mu::vm::*;
+use mu::ast::types::*;
 use mu::compiler::backend::*;
 use mu::runtime::mm::*;
+use mu::vm::*;
 
 #[test]
 fn test_int() {

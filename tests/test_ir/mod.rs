@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod test_builder_api;
 pub mod test_ir;
 mod test_types;
-pub mod test_builder_api;

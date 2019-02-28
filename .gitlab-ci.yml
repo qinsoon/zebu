@@ -9,39 +9,42 @@ before_script:
   - export ZEBU_BUILD=release
   - export CARGO_HOME=.cargo
   - export CC=clang
+  - export RUST_TEST_THREADS=1
   - export LD_LIBRARY_PATH=$MU_ZEBU/target/$ZEBU_BUILD:$LD_LIBRARY_PATH
   - source /home/gitlab-runner/ci/bin/activate
 
 build:
   stage: build
   script:
-    - rustc --version
-    - time CARGO_HOME=.cargo RUST_BACKTRACE=1 CC=clang cargo test -j6 --release --no-run --color=always
+    - rustup show
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu rustc --version
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo clean
+    - time rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test -j6 --release --no-run --color=always
   artifacts:
     paths:
-      - target/release/libmu.so
-      - target/release/libmu.a
-      - target/release/lib-*
+      - target/release/deps/libmu.so
+      - target/release/deps/libmu.a
+      - target/release/deps/lib-*
 
 test:cargo:api:
   stage: test
   script:
-    - RUST_BACKTRACE=1 RUST_TEST_THREADS=1 ./test-release --color=always test_api 2> /dev/null
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_api --release 2> /dev/null
 
 test:cargo:ir:
   stage: test
   script:
-    - RUST_BACKTRACE=1 RUST_TEST_THREADS=1 ./test-release --color=always test_ir 2> /dev/null
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_ir --release 2> /dev/null
 
 test:cargo:compiler:
   stage: test
   script:
-    - RUST_BACKTRACE=1 RUST_TEST_THREADS=1 ./test-release --color=always test_compiler 2> /dev/null
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_compiler --release 2> /dev/null
 
 test:cargo:runtime:
   stage: test
   script:
-    - RUST_BACKTRACE=1 RUST_TEST_THREADS=1 ./test-release --color=always test_runtime 2> /dev/null
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_runtime --release 2> /dev/null
 
 .build_muc: &build_muc |
   if [ -d "tests/test_muc/mu-tool-compiler" ]; then rm -Rf tests/test_muc/mu-tool-compiler; fi
@@ -58,39 +61,46 @@ testmuc:test_simple:
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_simple.py -v
+  allow_failure: true
 
 testmuc:test_swapstack:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_thread_and_stack.py -v
+  allow_failure: true
 
 testmuc:test_cmp:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_cmp.py -v
+  allow_failure: true
 
 testmuc:test_binop:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_binop.py -v
+  allow_failure: true
 
 testjit:milestones:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_milestones.py -v --color=yes
+  allow_failure: true
 
 testjit:binops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_binops.py -v --color=yes
+  allow_failure: true
 
 testjit:cmpops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_cmpops.py -v --color=yes
+  allow_failure: true
 
 testjit:controlflow:
   stage: test
@@ -99,31 +109,37 @@ testjit:controlflow:
     # as a C source file is expected in a relative path to current working directory
     - cd tests/test_jit
     - RUST_BACKTRACE=1 pytest test_controlflow.py -v --color=yes
+  allow_failure: true
 
 testjit:convops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_convops.py -v --color=yes
+  allow_failure: true
 
 testjit:double:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_double.py -v --color=yes
+  allow_failure: true
 
 testjit:memops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_memops.py -v --color=yes
+  allow_failure: true
 
 testjit:milestones:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_milestones.py -v --color=yes
+  allow_failure: true
 
 testjit:otherops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_otherops.py -v --color=yes
+  allow_failure: true
 
 testjit:rpython:
   stage: test
@@ -135,6 +151,7 @@ testjit:rpython:
     - git apply pypy.patch
     - cd $CI_PROJECT_DIR/tests/test_jit
     - MU_LOG_LEVEL=info LD_LIBRARY_PATH=./emit:$LD_LIBRARY_PATH RUST_BACKTRACE=1 PYTHONPATH=mu-client-pypy pytest test_rpython*.py -v --color=yes
+  allow_failure: true
 
 testjit:som:
   stage: test
@@ -149,10 +166,12 @@ testjit:som:
     - git apply pypy.patch
     - cd $CI_PROJECT_DIR/tests/test_jit
     - MU_LOG_LEVEL=info LD_LIBRARY_PATH=./emit:$LD_LIBRARY_PATH RUST_BACKTRACE=1 PYTHONPATH=mu-client-pypy:RPySOM/src RPYSOM=RPySOM pytest test_som.py -v --color=yes
+  allow_failure: true
 
 mubench:
   stage: mubench
   script:
+    - cp ./target/release/deps/libmu.so ./target/release/libmu.so
     - deactivate
     - git clone https://gitlab.anu.edu.au/mu/mu-perf-benchmarks.git
     - git clone https://gitlab.anu.edu.au/mu/mu-client-pypy.git
@@ -167,9 +186,8 @@ mubench:
     - mkdir ci
     - mubench local ./mu-perf-benchmarks/ci/*.yml --dump /home/gitlab-runner/results/$(git log -1 --pretty="%h_%at") --pipeline ""
     - rsync -a /home/gitlab-runner/results/* squirrel:~/mu-impl-fast/angus
-    
+
 rustfmt:
   stage: rustfmt
   script:
-    - cargo-fmt -- --write-mode=diff --verbose -- src/lib.rs src/ast/src/lib.rs src/gc/src/lib.rs src/utils/src/lib.rs
-
+    - cargo-fmt -- --check --verbose -- src/lib.rs src/ast/src/lib.rs src/gc/src/lib.rs src/utils/src/lib.rs

@@ -91,10 +91,10 @@ pub const OBJECT_HEADER_OFFSET: ByteOffset = 0;
 pub type TypeID = usize;
 pub const N_TYPES: usize = 1 << 23;
 
+mod global_type_table;
 mod object_encode;
 mod type_encode;
-mod global_type_table;
 
+pub use objectmodel::sidemap::global_type_table::*;
 pub use objectmodel::sidemap::object_encode::*;
 pub use objectmodel::sidemap::type_encode::*;
-pub use objectmodel::sidemap::global_type_table::*;

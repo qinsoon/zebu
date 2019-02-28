@@ -46,15 +46,19 @@ macro_rules! impl_mu_entity {
     ($entity: ty) => {
         impl MuEntity for $entity {
             #[inline(always)]
-            fn id(&self) -> MuID {self.hdr.id()}
+            fn id(&self) -> MuID {
+                self.hdr.id()
+            }
             #[inline(always)]
-            fn name(&self) -> MuName {self.hdr.name()}
+            fn name(&self) -> MuName {
+                self.hdr.name()
+            }
             fn as_entity(&self) -> &MuEntity {
-                let ref_ty : &$entity = self;
+                let ref_ty: &$entity = self;
                 ref_ty as &MuEntity
             }
         }
-    }
+    };
 }
 
 /// select between two values based on condition
@@ -65,12 +69,12 @@ macro_rules! select_value {
         } else {
             $res2
         }
-    }
+    };
 }
 
 #[macro_use]
 pub mod ir;
 pub mod inst;
-pub mod types;
-pub mod ptr;
 pub mod op;
+pub mod ptr;
+pub mod types;

@@ -1,8 +1,8 @@
 use ast::ir::*;
-use vm::VM;
-use std::path;
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
+use std::path;
+use vm::VM;
 
 /// should emit Mu IR dot graph?
 pub const EMIT_MUIR: bool = true;
@@ -21,14 +21,12 @@ fn emit_mu_types(suffix: &str, vm: &VM) {
     file_path.push(&vm.vm_options.flag_aot_emit_dir);
     file_path.push("___types".to_string() + suffix + ".uir");
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create mu types file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create mu types file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
 
     {
@@ -67,14 +65,12 @@ fn emit_mu_globals(suffix: &str, vm: &VM) {
     file_path.push(&vm.vm_options.flag_aot_emit_dir);
     file_path.push("___globals".to_string() + suffix + ".uir");
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create mu globals file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create mu globals file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
 
     let global_guard = vm.globals().read().unwrap();
@@ -85,7 +81,8 @@ fn emit_mu_globals(suffix: &str, vm: &VM) {
             ".global {}<{}>",
             g.name(),
             g.ty.get_referent_ty().unwrap()
-        ).unwrap();
+        )
+        .unwrap();
     }
 }
 fn emit_mu_funcdecls(suffix: &str, vm: &VM) {
@@ -95,14 +92,12 @@ fn emit_mu_funcdecls(suffix: &str, vm: &VM) {
     file_path.push(&vm.vm_options.flag_aot_emit_dir);
     file_path.push("___funcdecls".to_string() + suffix + ".uir");
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create mu funcdecls file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create mu funcdecls file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
 
     let funcs_guard = vm.funcs().read().unwrap();

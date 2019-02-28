@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::*;
 use common::ptr::*;
-use heap::immix::*;
 use heap::freelist::*;
+use heap::immix::*;
+use utils::*;
 
-use std::sync::RwLock;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::sync::RwLock;
 
-pub mod immix;
 pub mod freelist;
 pub mod gc;
+pub mod immix;
 
 pub const IMMIX_SPACE_RATIO: f64 = 1.0 - LO_SPACE_RATIO;
 pub const LO_SPACE_RATIO: f64 = 0.2;
@@ -42,7 +42,7 @@ pub enum SpaceDescriptor {
     ImmixTiny,
     ImmixNormal,
     Freelist,
-    Immortal
+    Immortal,
 }
 
 impl SpaceDescriptor {
@@ -93,15 +93,14 @@ pub fn fill_alignment_gap(start: Address, end: Address) -> () {
 
 const MAX_MUTATORS: usize = 1024;
 lazy_static! {
-    pub static ref MUTATORS : RwLock<Vec<Option<Arc<MutatorGlobal>>>> = {
+    pub static ref MUTATORS: RwLock<Vec<Option<Arc<MutatorGlobal>>>> = {
         let mut ret = Vec::with_capacity(MAX_MUTATORS);
         for _ in 0..MAX_MUTATORS {
             ret.push(None);
         }
         RwLock::new(ret)
     };
-
-    pub static ref N_MUTATORS : RwLock<usize> = RwLock::new(0);
+    pub static ref N_MUTATORS: RwLock<usize> = RwLock::new(0);
 }
 
 #[repr(C)]
@@ -110,12 +109,11 @@ pub struct Mutator {
     pub tiny: ImmixAllocator,
     pub normal: ImmixAllocator,
     pub lo: FreelistAllocator,
-    global: Arc<MutatorGlobal>
+    global: Arc<MutatorGlobal>,
 }
 
 lazy_static! {
-    pub static ref TINY_ALLOCATOR_OFFSET: ByteSize =
-        offset_of!(Mutator=>tiny).get_byte_offset();
+    pub static ref TINY_ALLOCATOR_OFFSET: ByteSize = offset_of!(Mutator=>tiny).get_byte_offset();
     pub static ref NORMAL_ALLOCATOR_OFFSET: ByteSize =
         offset_of!(Mutator=>normal).get_byte_offset();
 }
@@ -125,7 +123,7 @@ impl Mutator {
         tiny: ImmixAllocator,
         normal: ImmixAllocator,
         lo: FreelistAllocator,
-        global: Arc<MutatorGlobal>
+        global: Arc<MutatorGlobal>,
     ) -> Mutator {
         let mut id_lock = N_MUTATORS.write().unwrap();
         {
@@ -139,7 +137,7 @@ impl Mutator {
             tiny,
             normal,
             lo,
-            global
+            global,
         };
         *id_lock += 1;
 
@@ -210,14 +208,14 @@ pub trait Allocator {
 
 pub struct MutatorGlobal {
     take_yield: AtomicBool,
-    still_blocked: AtomicBool
+    still_blocked: AtomicBool,
 }
 
 impl MutatorGlobal {
     pub fn new() -> MutatorGlobal {
         MutatorGlobal {
             take_yield: AtomicBool::new(false),
-            still_blocked: AtomicBool::new(false)
+            still_blocked: AtomicBool::new(false),
         }
     }
 

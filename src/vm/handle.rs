@@ -15,9 +15,9 @@
 use ast::ir::*;
 use ast::ptr::*;
 use ast::types::*;
-use utils::BitSize;
-use utils::Address;
 use std::fmt;
+use utils::Address;
+use utils::BitSize;
 
 /// APIHandle represents the opaque handle type that the client uses to
 /// communicate with Mu. Handles can refer to values, functions, signatures,
@@ -25,7 +25,7 @@ use std::fmt;
 #[derive(Clone)]
 pub struct APIHandle {
     pub id: MuID,
-    pub v: APIHandleValue
+    pub v: APIHandleValue,
 }
 
 /// when we returning an API handle to the client, we create a Box<APIHandle>,
@@ -121,7 +121,7 @@ pub enum APIHandleValue {
     ExcParam,
     /// instruction result value
     //  TODO: unused
-    InstRes
+    InstRes,
 }
 
 impl fmt::Display for APIHandleValue {
@@ -159,7 +159,7 @@ impl fmt::Debug for APIHandleValue {
             &ExpFunc => write!(f, "IR.expfunc"),
             &NorParam => write!(f, "IR.norparam"),
             &ExcParam => write!(f, "IR.excparam"),
-            &InstRes => write!(f, "IR.instres")
+            &InstRes => write!(f, "IR.instres"),
         }
     }
 }
@@ -168,11 +168,10 @@ impl APIHandleValue {
     /// matches the handle as ref or iref
     pub fn as_ref_or_iref(&self) -> (P<MuType>, Address) {
         match self {
-            &APIHandleValue::Ref(ref ty, addr) | &APIHandleValue::IRef(ref ty, addr) => (
-                ty.clone(),
-                addr
-            ),
-            _ => panic!("expected Ref or IRef handle")
+            &APIHandleValue::Ref(ref ty, addr) | &APIHandleValue::IRef(ref ty, addr) => {
+                (ty.clone(), addr)
+            }
+            _ => panic!("expected Ref or IRef handle"),
         }
     }
 
@@ -180,7 +179,7 @@ impl APIHandleValue {
     pub fn as_ref(&self) -> (P<MuType>, Address) {
         match self {
             &APIHandleValue::Ref(ref ty, addr) => (ty.clone(), addr),
-            _ => panic!("expected Ref handle")
+            _ => panic!("expected Ref handle"),
         }
     }
 
@@ -188,23 +187,21 @@ impl APIHandleValue {
     pub fn as_iref(&self) -> (P<MuType>, Address) {
         match self {
             &APIHandleValue::IRef(ref ty, addr) => (ty.clone(), addr),
-            _ => panic!("expected IRef handle")
+            _ => panic!("expected IRef handle"),
         }
     }
 
     /// matches iref/ref/uptr/ufp handles and extracts address
     pub fn as_address(&self) -> Address {
         match self {
-            &APIHandleValue::IRef(_, addr) |
-            &APIHandleValue::Ref(_, addr) |
-            &APIHandleValue::UPtr(_, addr) |
-            &APIHandleValue::UFP(_, addr) => addr,
-            _ => {
-                panic!(
-                    "expected iref/ref/uptr/ufp which contains a pointer, found {}",
-                    self
-                )
-            }
+            &APIHandleValue::IRef(_, addr)
+            | &APIHandleValue::Ref(_, addr)
+            | &APIHandleValue::UPtr(_, addr)
+            | &APIHandleValue::UFP(_, addr) => addr,
+            _ => panic!(
+                "expected iref/ref/uptr/ufp which contains a pointer, found {}",
+                self
+            ),
         }
     }
 
@@ -212,7 +209,7 @@ impl APIHandleValue {
     pub fn as_int(&self) -> u64 {
         match self {
             &APIHandleValue::Int(val, _) => val,
-            _ => panic!("expected Int handle")
+            _ => panic!("expected Int handle"),
         }
     }
 
@@ -220,7 +217,7 @@ impl APIHandleValue {
     pub fn as_float(&self) -> f32 {
         match self {
             &APIHandleValue::Float(val) => val,
-            _ => panic!("expected Float handle")
+            _ => panic!("expected Float handle"),
         }
     }
 
@@ -228,7 +225,7 @@ impl APIHandleValue {
     pub fn as_double(&self) -> f64 {
         match self {
             &APIHandleValue::Double(val) => val,
-            _ => panic!("expected Double handle")
+            _ => panic!("expected Double handle"),
         }
     }
 
@@ -236,7 +233,7 @@ impl APIHandleValue {
     pub fn as_uptr(&self) -> (P<MuType>, Address) {
         match self {
             &APIHandleValue::UPtr(ref ty, addr) => (ty.clone(), addr),
-            _ => panic!("expected UPtr handle")
+            _ => panic!("expected UPtr handle"),
         }
     }
 
@@ -244,7 +241,7 @@ impl APIHandleValue {
     pub fn as_ufp(&self) -> (P<MuType>, Address) {
         match self {
             &APIHandleValue::UFP(ref ty, addr) => (ty.clone(), addr),
-            _ => panic!("expected UFP handle")
+            _ => panic!("expected UFP handle"),
         }
     }
 
@@ -252,7 +249,7 @@ impl APIHandleValue {
     pub fn as_funcref(&self) -> MuID {
         match self {
             &APIHandleValue::FuncRef(id) => id,
-            _ => panic!("expected FuncRef")
+            _ => panic!("expected FuncRef"),
         }
     }
 
@@ -260,7 +257,7 @@ impl APIHandleValue {
     pub fn as_tr64(&self) -> u64 {
         match self {
             &APIHandleValue::TagRef64(val) => val,
-            _ => panic!("expected TagRef64 handle")
+            _ => panic!("expected TagRef64 handle"),
         }
     }
 }

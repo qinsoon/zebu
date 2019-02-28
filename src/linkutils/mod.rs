@@ -17,14 +17,14 @@
 
 extern crate libloading as ll;
 
-use compiler::*;
 use ast::ir::*;
+use compiler::*;
 use std::sync::Arc;
 
+use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Output;
-use std::os::unix::process::ExitStatusExt;
 
 /// linking utilities for ahead-of-time compilation
 pub mod aot;
@@ -37,7 +37,7 @@ fn get_c_compiler() -> String {
 
     match env::var("CC") {
         Ok(val) => val,
-        Err(_) => "clang".to_string()
+        Err(_) => "clang".to_string(),
     }
 }
 
@@ -53,7 +53,7 @@ fn get_path_under_zebu(str: &'static str) -> PathBuf {
             ret.push(str);
             ret
         }
-        Err(_) => PathBuf::from(str)
+        Err(_) => PathBuf::from(str),
     }
 }
 
@@ -83,7 +83,7 @@ fn exec_cmd_nocheck(mut cmd: Command) -> Output {
     info!("executing: {:?}", cmd);
     let output = match cmd.output() {
         Ok(res) => res,
-        Err(e) => panic!("failed to execute: {}", e)
+        Err(e) => panic!("failed to execute: {}", e),
     };
 
     info!("---out---");
@@ -102,22 +102,13 @@ fn exec_cmd_nocheck(mut cmd: Command) -> Output {
 }
 
 /// returns a name for dynamic library
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "macos")]
 pub fn get_dylib_name(name: &'static str) -> String {
     format!("lib{}.dylib", name)
 }
 
 /// returns a name for dynamic library
-#[cfg(not(feature = "sel4-rumprun"))]
 #[cfg(target_os = "linux")]
 pub fn get_dylib_name(name: &'static str) -> String {
     format!("lib{}.so", name)
-}
-
-/// returns a name for dynamic library
-/// Must not be used for sel4-rumprun
-#[cfg(feature = "sel4-rumprun")]
-pub fn get_dylib_name(name: &'static str) -> String {
-    format!("lib{}.UNKNOWN", name)
 }

@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate mu;
 extern crate libloading;
+extern crate mu;
 
+use self::mu::ast::inst::*;
+use self::mu::ast::ir::*;
+use self::mu::ast::op::*;
+use self::mu::ast::types::*;
+use self::mu::compiler::*;
+use self::mu::vm::VM;
 use mu::linkutils;
 use mu::linkutils::aot;
 use mu::utils::LinkedHashMap;
 use test_compiler::test_call::gen_ccall_exit;
-use self::mu::compiler::*;
-use self::mu::ast::ir::*;
-use self::mu::ast::types::*;
-use self::mu::ast::inst::*;
-use self::mu::ast::op::*;
-use self::mu::vm::VM;
 
 use std::sync::Arc;
 
@@ -75,14 +75,14 @@ fn test_spill1() {
     let dylib = aot::link_dylib(
         vec![Mu("spill1")],
         &linkutils::get_dylib_name("spill1"),
-        &vm
+        &vm,
     );
 
     let lib = libloading::Library::new(dylib.as_os_str()).unwrap();
     unsafe {
         let spill1: libloading::Symbol<unsafe extern "C" fn() -> u64> = match lib.get(b"spill1") {
             Ok(symbol) => symbol,
-            Err(e) => panic!("cannot find symbol spill1 in dylib: {:?}", e)
+            Err(e) => panic!("cannot find symbol spill1 in dylib: {:?}", e),
         };
 
         // we cannot call this (it doesnt return)
@@ -300,7 +300,7 @@ fn test_simple_spill() {
     let dylib = aot::link_dylib(
         vec![Mu("simple_spill")],
         &linkutils::get_dylib_name("simple_spill"),
-        &vm
+        &vm,
     );
 
     let lib = libloading::Library::new(dylib.as_os_str()).unwrap();
@@ -308,7 +308,7 @@ fn test_simple_spill() {
         let simple_spill: libloading::Symbol<unsafe extern "C" fn() -> u64> =
             match lib.get(b"simple_spill") {
                 Ok(symbol) => symbol,
-                Err(e) => panic!("cannot find symbol simple_spill in dylib: {:?}", e)
+                Err(e) => panic!("cannot find symbol simple_spill in dylib: {:?}", e),
             };
 
         let res = simple_spill();
@@ -392,24 +392,24 @@ fn create_simple_spill() -> VM {
     );
 
     define_block!   ((vm, simple_spill_v1) blk_start(
-        blk_start_t1,
-        blk_start_t2,
-        blk_start_t3,
-        blk_start_t4,
-        blk_start_t5,
-        blk_start_t6,
-        blk_start_t7,
-        blk_start_t8,
-        blk_start_t9,
-        blk_start_t10,
-        blk_start_t11,
-        blk_start_t12,
-        blk_start_t13,
-        blk_start_t14) {
-            blk_start_add,
-            blk_start_branch
-        }
-     );
+       blk_start_t1,
+       blk_start_t2,
+       blk_start_t3,
+       blk_start_t4,
+       blk_start_t5,
+       blk_start_t6,
+       blk_start_t7,
+       blk_start_t8,
+       blk_start_t9,
+       blk_start_t10,
+       blk_start_t11,
+       blk_start_t12,
+       blk_start_t13,
+       blk_start_t14) {
+           blk_start_add,
+           blk_start_branch
+       }
+    );
 
     // %ret(%res, %t1, %t2, ... %t14):
     ssa!            ((vm, simple_spill_v1) <int64> blk_ret_res);
@@ -434,25 +434,25 @@ fn create_simple_spill() -> VM {
     );
 
     define_block!   ((vm, simple_spill_v1) blk_ret
-        (blk_ret_res,
-         blk_ret_t1,
-         blk_ret_t2,
-         blk_ret_t3,
-         blk_ret_t4,
-         blk_ret_t5,
-         blk_ret_t6,
-         blk_ret_t7,
-         blk_ret_t8,
-         blk_ret_t9,
-         blk_ret_t10,
-         blk_ret_t11,
-         blk_ret_t12,
-         blk_ret_t13,
-         blk_ret_t14
-        ) {
-            blk_ret_ret
-        }
-     );
+       (blk_ret_res,
+        blk_ret_t1,
+        blk_ret_t2,
+        blk_ret_t3,
+        blk_ret_t4,
+        blk_ret_t5,
+        blk_ret_t6,
+        blk_ret_t7,
+        blk_ret_t8,
+        blk_ret_t9,
+        blk_ret_t10,
+        blk_ret_t11,
+        blk_ret_t12,
+        blk_ret_t13,
+        blk_ret_t14
+       ) {
+           blk_ret_ret
+       }
+    );
 
     define_func_ver!((vm) simple_spill_v1 (entry: blk_entry) {
         blk_entry,
@@ -462,7 +462,6 @@ fn create_simple_spill() -> VM {
 
     vm
 }
-
 
 #[cfg(target_arch = "aarch64")]
 fn create_simple_spill() -> VM {
@@ -529,7 +528,6 @@ fn create_simple_spill() -> VM {
     ssa!            ((vm, simple_spill_v1) <int64> blk_start_t27);
     ssa!            ((vm, simple_spill_v1) <int64> blk_start_t28);
 
-
     // %res = ADD %t1 %t2
     ssa!            ((vm, simple_spill_v1) <int64> blk_start_res);
     inst!           ((vm, simple_spill_v1) blk_start_add:
@@ -573,38 +571,38 @@ fn create_simple_spill() -> VM {
     );
 
     define_block!   ((vm, simple_spill_v1) blk_start(
-        blk_start_t1,
-        blk_start_t2,
-        blk_start_t3,
-        blk_start_t4,
-        blk_start_t5,
-        blk_start_t6,
-        blk_start_t7,
-        blk_start_t8,
-        blk_start_t9,
-        blk_start_t10,
-        blk_start_t11,
-        blk_start_t12,
-        blk_start_t13,
-        blk_start_t14,
-        blk_start_t15,
-        blk_start_t16,
-        blk_start_t17,
-        blk_start_t18,
-        blk_start_t19,
-        blk_start_t20,
-        blk_start_t21,
-        blk_start_t22,
-        blk_start_t23,
-        blk_start_t24,
-        blk_start_t25,
-        blk_start_t26,
-        blk_start_t27,
-        blk_start_t28) {
-            blk_start_add,
-            blk_start_branch
-        }
-     );
+       blk_start_t1,
+       blk_start_t2,
+       blk_start_t3,
+       blk_start_t4,
+       blk_start_t5,
+       blk_start_t6,
+       blk_start_t7,
+       blk_start_t8,
+       blk_start_t9,
+       blk_start_t10,
+       blk_start_t11,
+       blk_start_t12,
+       blk_start_t13,
+       blk_start_t14,
+       blk_start_t15,
+       blk_start_t16,
+       blk_start_t17,
+       blk_start_t18,
+       blk_start_t19,
+       blk_start_t20,
+       blk_start_t21,
+       blk_start_t22,
+       blk_start_t23,
+       blk_start_t24,
+       blk_start_t25,
+       blk_start_t26,
+       blk_start_t27,
+       blk_start_t28) {
+           blk_start_add,
+           blk_start_branch
+       }
+    );
 
     // %ret(%res, %t1, %t2, ... %t14):
     ssa!            ((vm, simple_spill_v1) <int64> blk_ret_res);
@@ -643,39 +641,39 @@ fn create_simple_spill() -> VM {
     );
 
     define_block!   ((vm, simple_spill_v1) blk_ret
-        (blk_ret_res,
-         blk_ret_t1,
-         blk_ret_t2,
-         blk_ret_t3,
-         blk_ret_t4,
-         blk_ret_t5,
-         blk_ret_t6,
-         blk_ret_t7,
-         blk_ret_t8,
-         blk_ret_t9,
-         blk_ret_t10,
-         blk_ret_t11,
-         blk_ret_t12,
-         blk_ret_t13,
-         blk_ret_t14,
-         blk_ret_t15,
-         blk_ret_t16,
-         blk_ret_t17,
-         blk_ret_t18,
-         blk_ret_t19,
-         blk_ret_t20,
-         blk_ret_t21,
-         blk_ret_t22,
-         blk_ret_t23,
-         blk_ret_t24,
-         blk_ret_t25,
-         blk_ret_t26,
-         blk_ret_t27,
-         blk_ret_t28
-        ) {
-            blk_ret_ret
-        }
-     );
+       (blk_ret_res,
+        blk_ret_t1,
+        blk_ret_t2,
+        blk_ret_t3,
+        blk_ret_t4,
+        blk_ret_t5,
+        blk_ret_t6,
+        blk_ret_t7,
+        blk_ret_t8,
+        blk_ret_t9,
+        blk_ret_t10,
+        blk_ret_t11,
+        blk_ret_t12,
+        blk_ret_t13,
+        blk_ret_t14,
+        blk_ret_t15,
+        blk_ret_t16,
+        blk_ret_t17,
+        blk_ret_t18,
+        blk_ret_t19,
+        blk_ret_t20,
+        blk_ret_t21,
+        blk_ret_t22,
+        blk_ret_t23,
+        blk_ret_t24,
+        blk_ret_t25,
+        blk_ret_t26,
+        blk_ret_t27,
+        blk_ret_t28
+       ) {
+           blk_ret_ret
+       }
+    );
 
     define_func_ver!((vm) simple_spill_v1 (entry: blk_entry) {
         blk_entry,
@@ -710,9 +708,11 @@ fn test_coalesce_branch_moves() {
         // check
         let fv_id = func_ver.id();
 
-        assert!(get_number_of_moves(fv_id, &vm) == 2,
+        assert!(
+            get_number_of_moves(fv_id, &vm) == 2,
             "The function should not yield any mov instructions other than \
-            mov %rsp->%rbp and mov %rbp->%rsp (some possible coalescing failed)");
+             mov %rsp->%rbp and mov %rbp->%rsp (some possible coalescing failed)"
+        );
     }
 }
 
@@ -785,10 +785,12 @@ fn test_coalesce_args() {
         // check
         let fv_id = func_ver.id();
 
-        assert!(get_number_of_moves(fv_id, &vm) == 2,
+        assert!(
+            get_number_of_moves(fv_id, &vm) == 2,
             "The function should not yield any mov instructions other than \
-            mov %rsp->%rbp and mov %rbp->%rsp (or MOV SP -> FP on aarch64) \
-            (some possible coalescing failed)");
+             mov %rsp->%rbp and mov %rbp->%rsp (or MOV SP -> FP on aarch64) \
+             (some possible coalescing failed)"
+        );
     }
 }
 
@@ -853,8 +855,10 @@ fn test_coalesce_branch2_moves() {
         // check
         let fv_id = func_ver.id();
 
-        assert!(get_number_of_moves(fv_id, &vm) <= 4,
-            "too many moves (some possible coalescing failed)");
+        assert!(
+            get_number_of_moves(fv_id, &vm) <= 4,
+            "too many moves (some possible coalescing failed)"
+        );
     }
 
     backend::emit_context(&vm);
@@ -862,7 +866,7 @@ fn test_coalesce_branch2_moves() {
     let dylib = aot::link_dylib(
         vec![Mu("coalesce_branch2_moves")],
         &linkutils::get_dylib_name("coalesce_branch2_moves"),
-        &vm
+        &vm,
     );
 
     let lib = libloading::Library::new(dylib.as_os_str()).unwrap();
@@ -871,7 +875,10 @@ fn test_coalesce_branch2_moves() {
             unsafe extern "C" fn(u64, u64, u64, u64, u64, u64) -> u64,
         > = match lib.get(b"coalesce_branch2_moves") {
             Ok(symbol) => symbol,
-            Err(e) => panic!("cannot find symbol coalesce_branch2_moves in dylib: {:?}", e),
+            Err(e) => panic!(
+                "cannot find symbol coalesce_branch2_moves in dylib: {:?}",
+                e
+            ),
         };
 
         let res = coalesce_branch2_moves(1, 1, 10, 10, 0, 0);
@@ -1020,7 +1027,7 @@ fn test_preserve_caller_saved_simple() {
     let executable = aot::link_primordial(
         vec![Mu("foo"), Mu("preserve_caller_saved_simple")],
         "test_preserve_caller_saved_simple",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -1245,7 +1252,7 @@ fn test_preserve_caller_saved_call_args() {
     let executable = aot::link_primordial(
         vec![Mu("foo6"), Mu("preserve_caller_saved_call_args")],
         "test_preserve_caller_saved_call_args",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -1436,7 +1443,6 @@ fn create_empty_func_foo6(vm: &VM) {
     define_func_ver!((vm) foo6_v1 (entry: blk_entry) {blk_entry});
 }
 
-
 #[test]
 #[allow(unused_variables)]
 #[allow(overflowing_literals)]
@@ -1466,7 +1472,7 @@ fn test_spill_int8() {
     let dylib = aot::link_dylib(
         vec![Mu("spill_int8")],
         &linkutils::get_dylib_name("spill_int8"),
-        &vm
+        &vm,
     );
 
     let lib = libloading::Library::new(dylib.as_os_str()).unwrap();
@@ -1474,7 +1480,7 @@ fn test_spill_int8() {
         let spill_int8: libloading::Symbol<unsafe extern "C" fn() -> u8> =
             match lib.get(b"spill_int8") {
                 Ok(symbol) => symbol,
-                Err(e) => panic!("cannot find symbol spill_int8 in dylib: {:?}", e)
+                Err(e) => panic!("cannot find symbol spill_int8 in dylib: {:?}", e),
             };
 
         let res = spill_int8();
@@ -1732,7 +1738,6 @@ fn spill_int8() -> VM {
     constdef!   ((vm) <int8> int8_28 = Constant::Int(28));
     constdef!   ((vm) <int8> int8_29 = Constant::Int(29));
     constdef!   ((vm) <int8> int8_30 = Constant::Int(30));
-
 
     funcsig!    ((vm) sig = () -> (int8));
     funcdecl!   ((vm) <sig> spill_int8);
@@ -1994,7 +1999,6 @@ fn spill_int8() -> VM {
     inst!   ((vm, spill_int8_v1) blk_ret_add30:
         res30 = BINOP (BinOp::Add) res29 v30
     );
-
 
     inst!   ((vm, spill_int8_v1) blk_ret_ret:
         RET (res30)

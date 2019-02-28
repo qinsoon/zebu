@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use heap::*;
-use heap::immix::ImmixSpace;
 use heap::immix::immix_space::ImmixBlock;
+use heap::immix::ImmixSpace;
+use heap::*;
 use objectmodel;
+use std::*;
 use utils::Address;
 use utils::ByteSize;
-use std::*;
 
 const TRACE_ALLOC: bool = true;
 
@@ -37,12 +37,12 @@ pub struct ImmixAllocator {
     large_block: Option<Raw<ImmixBlock>>,
 
     space: Raw<ImmixSpace>,
-    mutator: *mut Mutator
+    mutator: *mut Mutator,
 }
 
 lazy_static! {
-    pub static ref CURSOR_OFFSET : ByteSize = offset_of!(ImmixAllocator=>cursor).get_byte_offset();
-    pub static ref LIMIT_OFFSET  : ByteSize = offset_of!(ImmixAllocator=>limit).get_byte_offset();
+    pub static ref CURSOR_OFFSET: ByteSize = offset_of!(ImmixAllocator=>cursor).get_byte_offset();
+    pub static ref LIMIT_OFFSET: ByteSize = offset_of!(ImmixAllocator=>limit).get_byte_offset();
 }
 
 impl Allocator for ImmixAllocator {
@@ -120,7 +120,7 @@ impl ImmixAllocator {
             large_limit: unsafe { Address::zero() },
             large_block: None,
             space,
-            mutator: ptr::null_mut()
+            mutator: ptr::null_mut(),
         }
     }
 
@@ -191,8 +191,8 @@ impl ImmixAllocator {
                     // we can alloc from local blocks
                     let end_line = self.block().get_next_unavailable_line(next_available_line);
 
-                    self.cursor = self.block().mem_start() +
-                        ((next_available_line as usize) << LOG_BYTES_IN_LINE);
+                    self.cursor = self.block().mem_start()
+                        + ((next_available_line as usize) << LOG_BYTES_IN_LINE);
                     self.limit =
                         self.block().mem_start() + ((end_line as usize) << LOG_BYTES_IN_LINE);
                     self.line = end_line;
@@ -207,7 +207,7 @@ impl ImmixAllocator {
 
                     self.alloc(size, align)
                 }
-                None => self.alloc_from_global(size, align, false)
+                None => self.alloc_from_global(size, align, false),
             }
         } else {
             // we need to alloc from global space
@@ -262,8 +262,6 @@ impl ImmixAllocator {
             }
         }
     }
-
-
 
     fn return_block(&mut self, request_large: bool) {
         if request_large {

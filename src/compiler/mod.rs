@@ -15,17 +15,17 @@
 extern crate hprof;
 
 use ast::ir::*;
-use vm::VM;
 use std::cell::RefCell;
+use vm::VM;
 
-/// compiler passes
-pub mod passes;
 /// compiler backends, include target description, and target dependent passes
 pub mod backend;
 /// a frame layout for a compiled function
 pub mod frame;
 /// machine code representation
 pub mod machine_code;
+/// compiler passes
+pub mod passes;
 
 pub use compiler::passes::CompilerPass;
 
@@ -39,7 +39,7 @@ pub struct Compiler<'vm> {
     /// policy decides what passes to be executed
     policy: RefCell<CompilerPolicy>,
     /// a reference to vm, for compiler to query VM-wide info
-    vm: &'vm VM
+    vm: &'vm VM,
 }
 
 impl<'vm> Compiler<'vm> {
@@ -47,7 +47,7 @@ impl<'vm> Compiler<'vm> {
     pub fn new(policy: CompilerPolicy, vm: &VM) -> Compiler {
         Compiler {
             policy: RefCell::new(policy),
-            vm: vm
+            vm: vm,
         }
     }
 
@@ -86,7 +86,7 @@ impl<'vm> Compiler<'vm> {
 /// CompilerPolicy specifies a list of ordered CompilerPasses
 /// the compiler will follow the list to compile each function
 pub struct CompilerPolicy {
-    pub passes: Vec<Box<CompilerPass>>
+    pub passes: Vec<Box<CompilerPass>>,
 }
 
 impl CompilerPolicy {
@@ -142,7 +142,8 @@ fn hprof_print_child(this: &ProfileNode, indent: usize) {
         indent_str += " ";
     }
 
-    let parent_time = this.parent
+    let parent_time = this
+        .parent
         .as_ref()
         .map(|p| p.total_time.get())
         .unwrap_or(this.total_time.get()) as f64;

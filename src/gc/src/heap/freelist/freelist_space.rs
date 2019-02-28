@@ -15,11 +15,11 @@
 use common::ptr::*;
 use heap::*;
 use objectmodel::sidemap::*;
-use utils::mem::*;
 use utils::mem::memsec::memzero;
+use utils::mem::*;
 
-use std::sync::Mutex;
 use std::mem;
+use std::sync::Mutex;
 
 const LOG_BYTES_IN_PAGE: usize = 12;
 const BYTES_IN_PAGE: ByteSize = 1 << LOG_BYTES_IN_PAGE; // 4KB
@@ -60,7 +60,7 @@ pub struct FreelistSpace {
     page_encode_table: [LargeObjectEncode; PAGES_IN_SPACE],
     page_mark_table: [PageMark; PAGES_IN_SPACE],
 
-    mem: [u8; 0]
+    mem: [u8; 0],
 }
 
 impl RawMemoryMetadata for FreelistSpace {
@@ -100,7 +100,7 @@ impl Space for FreelistSpace {
         unsafe {
             memzero(
                 &mut self.page_mark_table[0] as *mut PageMark,
-                self.cur_pages
+                self.cur_pages,
             );
         }
     }
@@ -178,9 +178,10 @@ impl FreelistSpace {
         let space_size = math::align_up(space_size, BYTES_IN_PAGE);
 
         let meta_start = mmap_start.align_up(SPACE_ALIGN);
-        let mem_start = meta_start + BYTES_IN_PAGE +
-            mem::size_of::<LargeObjectEncode>() * PAGES_IN_SPACE +
-            mem::size_of::<PageMark>() * PAGES_IN_SPACE;
+        let mem_start = meta_start
+            + BYTES_IN_PAGE
+            + mem::size_of::<LargeObjectEncode>() * PAGES_IN_SPACE
+            + mem::size_of::<PageMark>() * PAGES_IN_SPACE;
         let mem_end = mem_start + space_size;
         trace!("    space metadata: {}", meta_start);
         trace!("    space: {} ~ {}", mem_start, mem_end);
@@ -204,11 +205,11 @@ impl FreelistSpace {
             use std::ptr;
             ptr::write(
                 &mut space.usable_nodes as *mut Mutex<Vec<FreelistNode>>,
-                Mutex::new(Vec::new())
+                Mutex::new(Vec::new()),
             );
             ptr::write(
                 &mut space.used_nodes as *mut Mutex<Vec<FreelistNode>>,
-                Mutex::new(Vec::new())
+                Mutex::new(Vec::new()),
             );
         }
         trace!("    initialized total/usable/used_nodes");
@@ -345,7 +346,7 @@ impl FreelistSpace {
 #[repr(C)]
 pub struct FreelistNode {
     size: ByteSize,
-    addr: Address
+    addr: Address,
 }
 
 #[repr(u8)]
@@ -353,5 +354,5 @@ pub struct FreelistNode {
 #[allow(dead_code)] // we do not explicitly use Free, but we zero the page marks
 pub enum PageMark {
     Free = 0,
-    Live
+    Live,
 }

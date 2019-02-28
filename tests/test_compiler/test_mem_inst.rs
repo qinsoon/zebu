@@ -14,18 +14,18 @@
 
 extern crate libloading;
 
-use mu::ast::types::*;
-use mu::ast::ir::*;
 use mu::ast::inst::*;
+use mu::ast::ir::*;
 use mu::ast::op::*;
-use mu::vm::*;
+use mu::ast::types::*;
 use mu::compiler::*;
-use mu::utils::LinkedHashMap;
 use mu::utils::mem::memsec;
+use mu::utils::LinkedHashMap;
+use mu::vm::*;
 
-use std::sync::Arc;
-use mu::linkutils::aot;
 use mu::linkutils;
+use mu::linkutils::aot;
+use std::sync::Arc;
 
 use test_compiler::test_call::gen_ccall_exit;
 
@@ -36,7 +36,7 @@ fn test_store_seqcst() {
     unsafe {
         let ptr: *mut u64 = match memsec::malloc(8) {
             Some(ptr) => ptr,
-            None => panic!("failed to allocate memory for test")
+            None => panic!("failed to allocate memory for test"),
         };
 
         let store_seqcst: libloading::Symbol<unsafe extern "C" fn(*mut u64, u64)> =
@@ -282,7 +282,6 @@ fn get_field_iref1() -> VM {
         RET (ret)
     );
 
-
     define_block!   ((vm, get_field_iref1_v1) blk_entry(x) {
         blk_entry_get_iref, blk_entry_get_field_iref1, blk_entry_ret
     });
@@ -369,7 +368,7 @@ fn test_struct() {
     let executable = aot::link_primordial(
         vec![Arc::new("struct_insts".to_string())],
         "struct_insts_test",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -633,7 +632,7 @@ fn test_hybrid_fix_part() {
     let executable = aot::link_primordial(
         vec![Arc::new("hybrid_fix_part_insts".to_string())],
         "hybrid_fix_part_insts_test",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -798,7 +797,7 @@ fn test_hybrid_var_part() {
     let executable = aot::link_primordial(
         vec![Arc::new("hybrid_var_part_insts".to_string())],
         "hybrid_var_part_insts_test",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -1267,7 +1266,7 @@ fn shift_iref_ele_16bytes() -> VM {
 fn test_get_elem_iref_array_ele_9bytes() {
     let lib = linkutils::aot::compile_fnc(
         "get_elem_iref_array_ele_9bytes",
-        &get_elem_iref_array_ele_9bytes
+        &get_elem_iref_array_ele_9bytes,
     );
 
     unsafe {

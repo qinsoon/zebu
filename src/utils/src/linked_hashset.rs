@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::borrow::Borrow;
 use std::collections::hash_map::RandomState;
 use std::hash::{BuildHasher, Hash};
-use std::borrow::Borrow;
 
-use linked_hashmap::LinkedHashMap;
 use linked_hashmap::Keys;
+use linked_hashmap::LinkedHashMap;
 
 /// A LinkedHashSet based on LinkedHashMap implementation
 pub struct LinkedHashSet<K, S = RandomState>(LinkedHashMap<K, (), S>);
@@ -65,7 +65,7 @@ impl<K: Hash + Eq, S: BuildHasher> LinkedHashSet<K, S> {
     pub fn pop_front(&mut self) -> Option<K> {
         match self.0.pop_front() {
             Some((k, _)) => Some(k),
-            None => None
+            None => None,
         }
     }
 
@@ -73,7 +73,7 @@ impl<K: Hash + Eq, S: BuildHasher> LinkedHashSet<K, S> {
     pub fn pop_back(&mut self) -> Option<K> {
         match self.0.pop_back() {
             Some((k, _)) => Some(k),
-            None => None
+            None => None,
         }
     }
 
@@ -86,7 +86,7 @@ impl<K: Hash + Eq, S: BuildHasher> LinkedHashSet<K, S> {
     pub fn contains<Q: ?Sized>(&self, k: &Q) -> bool
     where
         K: Borrow<Q>,
-        Q: Eq + Hash
+        Q: Eq + Hash,
     {
         self.0.contains_key(k)
     }
@@ -94,7 +94,7 @@ impl<K: Hash + Eq, S: BuildHasher> LinkedHashSet<K, S> {
     /// retains elements that matches the predicate
     pub fn retain<F>(&mut self, mut f: F)
     where
-        F: FnMut(&K) -> bool
+        F: FnMut(&K) -> bool,
     {
         let mut retain = vec![];
         while let Some(x) = self.0.pop_front() {
@@ -111,7 +111,7 @@ impl<K: Hash + Eq, S: BuildHasher> LinkedHashSet<K, S> {
     pub fn remove<Q: ?Sized>(&mut self, k: &Q)
     where
         K: Borrow<Q>,
-        Q: Eq + Hash
+        Q: Eq + Hash,
     {
         self.0.remove(k);
     }

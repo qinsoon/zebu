@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use mu::vm::*;
-use mu::vm::handle::*;
 use mu::ast::types::*;
 use mu::utils::Address;
+use mu::vm::handle::*;
+use mu::vm::*;
 
 use std::f64;
 use std::mem::transmute;
@@ -30,28 +30,28 @@ use std::mem::transmute;
 fn tr64(val: u64) -> APIHandle {
     APIHandle {
         id: 0, // arbitrary
-        v: APIHandleValue::TagRef64(val)
+        v: APIHandleValue::TagRef64(val),
     }
 }
 
 fn double(val: f64) -> APIHandle {
     APIHandle {
         id: 0, // arbitrary
-        v: APIHandleValue::Double(val)
+        v: APIHandleValue::Double(val),
     }
 }
 
 fn tag(val: u64) -> APIHandle {
     APIHandle {
         id: 0, // arbitrary
-        v: APIHandleValue::Int(val, 6)
+        v: APIHandleValue::Int(val, 6),
     }
 }
 
 fn int52(val: u64) -> APIHandle {
     APIHandle {
         id: 0, // arbitrary
-        v: APIHandleValue::Int(val, 52)
+        v: APIHandleValue::Int(val, 52),
     }
 }
 
@@ -60,7 +60,7 @@ fn ref_void(val: u64) -> APIHandle {
         id: 0, // arbitrary
         v: APIHandleValue::Ref(REF_VOID_TYPE.clone(), unsafe {
             Address::from_usize(val as usize)
-        })
+        }),
     }
 }
 
@@ -157,13 +157,12 @@ fn test_encode_double() {
                 .as_tr64(),
             0x7ff0000000000008u64
         );
-        assert!(
-            transmute::<u64, f64>(
-                (vm.handle_tr64_from_fp(&double(transmute(0x7ff123456789abcdu64)))
-                     .v
-                     .as_tr64())
-            ).is_nan()
-        );
+        assert!(transmute::<u64, f64>(
+            (vm.handle_tr64_from_fp(&double(transmute(0x7ff123456789abcdu64)))
+                .v
+                .as_tr64())
+        )
+        .is_nan());
     }
 }
 
@@ -249,12 +248,11 @@ fn test_decode_double() {
             .as_double(),
         1.0_f64
     );
-    assert!(
-        vm.handle_tr64_to_fp(&tr64(0x7ff0000000000008))
-            .v
-            .as_double()
-            .is_nan()
-    );
+    assert!(vm
+        .handle_tr64_to_fp(&tr64(0x7ff0000000000008))
+        .v
+        .as_double()
+        .is_nan());
 }
 
 #[test]

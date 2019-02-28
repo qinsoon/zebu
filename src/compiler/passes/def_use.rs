@@ -14,18 +14,18 @@
 
 use ast::ir::*;
 use ast::ptr::*;
-use vm::VM;
 use compiler::CompilerPass;
 use std::any::Any;
+use vm::VM;
 
 pub struct DefUse {
-    name: &'static str
+    name: &'static str,
 }
 
 impl DefUse {
     pub fn new() -> DefUse {
         DefUse {
-            name: "Def-Use Pass"
+            name: "Def-Use Pass",
         }
     }
 }

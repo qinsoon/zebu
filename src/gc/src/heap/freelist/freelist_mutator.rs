@@ -20,7 +20,7 @@ use std::ptr;
 #[repr(C)]
 pub struct FreelistAllocator {
     space: Raw<FreelistSpace>,
-    mutator: *mut Mutator
+    mutator: *mut Mutator,
 }
 
 impl Allocator for FreelistAllocator {
@@ -51,7 +51,7 @@ impl FreelistAllocator {
     pub fn new(space: Raw<FreelistSpace>) -> FreelistAllocator {
         FreelistAllocator {
             space,
-            mutator: ptr::null_mut()
+            mutator: ptr::null_mut(),
         }
     }
 

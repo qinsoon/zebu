@@ -1,13 +1,13 @@
-extern crate mu;
-extern crate log;
 extern crate libloading;
+extern crate log;
+extern crate mu;
 
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
-use self::mu::vm::*;
+use self::mu::ast::ir::*;
+use self::mu::ast::types::*;
 use self::mu::linkutils;
 use self::mu::utils::LinkedHashMap;
+use self::mu::vm::*;
 use std::sync::Arc;
 
 #[test]

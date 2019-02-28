@@ -39,17 +39,17 @@ pub use compiler::backend::x86_64::asm_backend::emit_context_with_reloc;
 #[cfg(feature = "aot")]
 pub use compiler::backend::x86_64::asm_backend::spill_rewrite;
 
-use utils::Address;
-use utils::ByteSize;
-use ast::ptr::P;
 use ast::ir::*;
+use ast::ptr::P;
 use ast::types::*;
 use compiler::backend::RegGroup;
-use vm::VM;
 use std::sync::Arc;
+use utils::Address;
+use utils::ByteSize;
+use vm::VM;
 
-use utils::LinkedHashMap;
 use std::collections::HashMap;
+use utils::LinkedHashMap;
 
 // number of normal callee saved registers (excluding RSP and RBP)
 pub const CALLEE_SAVED_COUNT: usize = 5;
@@ -58,64 +58,62 @@ pub const CALLEE_SAVED_COUNT: usize = 5;
 macro_rules! GPR_ALIAS {
     ($alias: ident: ($id64: expr, $r64: ident) ->
      $r32: ident, $r16: ident, $r8l: ident, $r8h: ident) => {
-        lazy_static!{
-            pub static ref $r64 : P<Value> = GPR!($id64,    stringify!($r64), UINT64_TYPE);
-            pub static ref $r32 : P<Value> = GPR!($id64 +1, stringify!($r32), UINT32_TYPE);
-            pub static ref $r16 : P<Value> = GPR!($id64 +2, stringify!($r16), UINT16_TYPE);
-            pub static ref $r8l : P<Value> = GPR!($id64 +3, stringify!($r8l), UINT8_TYPE);
-            pub static ref $r8h : P<Value> = GPR!($id64 +4, stringify!($r8h), UINT8_TYPE);
-
-            pub static ref $alias : [P<Value>; 5] = [$r64.clone(), $r32.clone(), $r16.clone(),
-                                                     $r8l.clone(), $r8h.clone()];
+        lazy_static! {
+            pub static ref $r64: P<Value> = GPR!($id64, stringify!($r64), UINT64_TYPE);
+            pub static ref $r32: P<Value> = GPR!($id64 + 1, stringify!($r32), UINT32_TYPE);
+            pub static ref $r16: P<Value> = GPR!($id64 + 2, stringify!($r16), UINT16_TYPE);
+            pub static ref $r8l: P<Value> = GPR!($id64 + 3, stringify!($r8l), UINT8_TYPE);
+            pub static ref $r8h: P<Value> = GPR!($id64 + 4, stringify!($r8h), UINT8_TYPE);
+            pub static ref $alias: [P<Value>; 5] = [
+                $r64.clone(),
+                $r32.clone(),
+                $r16.clone(),
+                $r8l.clone(),
+                $r8h.clone()
+            ];
         }
     };
 
     ($alias: ident: ($id64: expr, $r64: ident) -> $r32: ident, $r16: ident, $r8: ident) => {
-        lazy_static!{
-            pub static ref $r64 : P<Value> = GPR!($id64,    stringify!($r64), UINT64_TYPE);
-            pub static ref $r32 : P<Value> = GPR!($id64 +1, stringify!($r32), UINT32_TYPE);
-            pub static ref $r16 : P<Value> = GPR!($id64 +2, stringify!($r16), UINT16_TYPE);
-            pub static ref $r8  : P<Value> = GPR!($id64 +3, stringify!($r8) , UINT8_TYPE );
-
-            pub static ref $alias : [P<Value>; 4] = [$r64.clone(), $r32.clone(),
-                                                     $r16.clone(), $r8.clone()];
+        lazy_static! {
+            pub static ref $r64: P<Value> = GPR!($id64, stringify!($r64), UINT64_TYPE);
+            pub static ref $r32: P<Value> = GPR!($id64 + 1, stringify!($r32), UINT32_TYPE);
+            pub static ref $r16: P<Value> = GPR!($id64 + 2, stringify!($r16), UINT16_TYPE);
+            pub static ref $r8: P<Value> = GPR!($id64 + 3, stringify!($r8), UINT8_TYPE);
+            pub static ref $alias: [P<Value>; 4] =
+                [$r64.clone(), $r32.clone(), $r16.clone(), $r8.clone()];
         }
     };
 
     ($alias: ident: ($id64: expr, $r64: ident)) => {
-        lazy_static!{
-            pub static ref $r64 : P<Value> = GPR!($id64, stringify!($r64), UINT64_TYPE);
-
-            pub static ref $alias : [P<Value>; 4] = [$r64.clone(), $r64.clone(),
-                                                     $r64.clone(), $r64.clone()];
+        lazy_static! {
+            pub static ref $r64: P<Value> = GPR!($id64, stringify!($r64), UINT64_TYPE);
+            pub static ref $alias: [P<Value>; 4] =
+                [$r64.clone(), $r64.clone(), $r64.clone(), $r64.clone()];
         }
     };
 }
 
 /// a macro to declare a general purpose register
 macro_rules! GPR {
-    ($id:expr, $name: expr, $ty: ident) => {
-        {
-            P(Value {
-                hdr: MuEntityHeader::named($id, Arc::new($name.to_string())),
-                ty: $ty.clone(),
-                v: Value_::SSAVar($id)
-            })
-        }
-    };
+    ($id:expr, $name: expr, $ty: ident) => {{
+        P(Value {
+            hdr: MuEntityHeader::named($id, Arc::new($name.to_string())),
+            ty: $ty.clone(),
+            v: Value_::SSAVar($id),
+        })
+    }};
 }
 
 /// a macro to declare a floating point register
 macro_rules! FPR {
-    ($id:expr, $name: expr) => {
-        {
-            P(Value {
-                hdr: MuEntityHeader::named($id, Arc::new($name.to_string())),
-                ty: DOUBLE_TYPE.clone(),
-                v: Value_::SSAVar($id)
-            })
-        }
-    };
+    ($id:expr, $name: expr) => {{
+        P(Value {
+            hdr: MuEntityHeader::named($id, Arc::new($name.to_string())),
+            ty: DOUBLE_TYPE.clone(),
+            v: Value_::SSAVar($id),
+        })
+    }};
 }
 
 // declare all general purpose registers for x86_64
@@ -188,7 +186,7 @@ pub fn get_alias_for_length(id: MuID, length: usize) -> P<Value> {
     if id < FPR_ID_START {
         let vec = match GPR_ALIAS_TABLE.get(&id) {
             Some(vec) => vec,
-            None => panic!("didnt find {} as GPR", id)
+            None => panic!("didnt find {} as GPR", id),
         };
 
         match length {
@@ -197,7 +195,7 @@ pub fn get_alias_for_length(id: MuID, length: usize) -> P<Value> {
             16 => vec[2].clone(),
             8 => vec[3].clone(),
             1 => vec[3].clone(),
-            _ => panic!("unexpected length {} for {}", length, vec[0])
+            _ => panic!("unexpected length {} for {}", length, vec[0]),
         }
     } else {
         for r in ALL_FPRS.iter() {
@@ -218,7 +216,7 @@ pub fn is_aliased(id1: MuID, id2: MuID) -> bool {
         macro_rules! is_match {
             ($a1: expr, $a2: expr; $b: expr) => {
                 $a1 == $b.id() || $a2 == $b.id()
-            }
+            };
         };
 
         if is_match!(id1, id2; AH) {
@@ -244,7 +242,7 @@ pub fn get_color_for_precolored(id: MuID) -> MuID {
     if id < FPR_ID_START {
         match GPR_ALIAS_LOOKUP.get(&id) {
             Some(val) => val.id(),
-            None => panic!("cannot find GPR {}", id)
+            None => panic!("cannot find GPR {}", id),
         }
     } else {
         // we do not have alias for FPRs
@@ -261,7 +259,7 @@ pub fn check_op_len(op: &P<Value>) -> usize {
         Some(16) => 16,
         Some(8) => 8,
         Some(1) => 8,
-        _ => panic!("unsupported register length for x64: {}", op.ty)
+        _ => panic!("unsupported register length for x64: {}", op.ty),
     }
 }
 
@@ -331,7 +329,7 @@ lazy_static! {
 
 pub const FPR_ID_START: usize = 100;
 
-lazy_static!{
+lazy_static! {
     // floating point registers, we use SSE registers
     pub static ref XMM0  : P<Value> = FPR!(FPR_ID_START,    "xmm0");
     pub static ref XMM1  : P<Value> = FPR!(FPR_ID_START + 1,"xmm1");
@@ -531,7 +529,7 @@ pub fn number_of_usable_regs_in_group(group: RegGroup) -> usize {
     match group {
         RegGroup::GPR => ALL_USABLE_GPRS.len(),
         RegGroup::GPREX => ALL_USABLE_GPRS.len(),
-        RegGroup::FPR => ALL_USABLE_FPRS.len()
+        RegGroup::FPR => ALL_USABLE_FPRS.len(),
     }
 }
 
@@ -619,16 +617,14 @@ pub fn is_valid_x86_imm(op: &P<Value>) -> bool {
     if let Some(int_width) = op.ty.get_int_length() {
         match int_width {
             1...32 => op.is_int_const(),
-            64 => {
-                match op.v {
-                    Value_::Constant(Constant::Int(val)) => {
-                        val as i64 >= i32::MIN as i64 && val as i64 <= i32::MAX as i64
-                    }
-                    _ => false
+            64 => match op.v {
+                Value_::Constant(Constant::Int(val)) => {
+                    val as i64 >= i32::MIN as i64 && val as i64 <= i32::MAX as i64
                 }
-            }
+                _ => false,
+            },
             128 => false,
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     } else {
         false
@@ -648,16 +644,16 @@ pub fn estimate_insts_for_ir(inst: &Instruction) -> usize {
         CmpOp(_, _, _) => 1,
         ConvOp { .. } => 0,
 
-        CommonInst_Tr64IsFp(_) |
-        CommonInst_Tr64IsInt(_) |
-        CommonInst_Tr64IsRef(_) |
-        CommonInst_Tr64FromFp(_) |
-        CommonInst_Tr64FromInt(_) |
-        CommonInst_Tr64FromRef(_, _) |
-        CommonInst_Tr64ToFp(_) |
-        CommonInst_Tr64ToInt(_) |
-        CommonInst_Tr64ToRef(_) |
-        CommonInst_Tr64ToTag(_) => 3,
+        CommonInst_Tr64IsFp(_)
+        | CommonInst_Tr64IsInt(_)
+        | CommonInst_Tr64IsRef(_)
+        | CommonInst_Tr64FromFp(_)
+        | CommonInst_Tr64FromInt(_)
+        | CommonInst_Tr64FromRef(_, _)
+        | CommonInst_Tr64ToFp(_)
+        | CommonInst_Tr64ToInt(_)
+        | CommonInst_Tr64ToRef(_)
+        | CommonInst_Tr64ToTag(_) => 3,
 
         // control flow
         Branch1(_) => 1,
@@ -681,11 +677,11 @@ pub fn estimate_insts_for_ir(inst: &Instruction) -> usize {
         Fence(_) => 1,
 
         // memory addressing
-        GetIRef(_) |
-        GetFieldIRef { .. } |
-        GetElementIRef { .. } |
-        ShiftIRef { .. } |
-        GetVarPartIRef { .. } => 0,
+        GetIRef(_)
+        | GetFieldIRef { .. }
+        | GetElementIRef { .. }
+        | ShiftIRef { .. }
+        | GetVarPartIRef { .. } => 0,
 
         // runtime call
         New(_) | NewHybrid(_, _) => 10,
@@ -703,7 +699,7 @@ pub fn estimate_insts_for_ir(inst: &Instruction) -> usize {
         PrintHex(_) => 10,
         SetRetval(_) => 10,
         GetVMThreadLocal => 10,
-        ExnInstruction { ref inner, .. } => estimate_insts_for_ir(&inner)
+        ExnInstruction { ref inner, .. } => estimate_insts_for_ir(&inner),
     }
 }
 

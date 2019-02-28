@@ -13,13 +13,13 @@
 // limitations under the License.
 
 use compiler::backend::*;
-use utils::Address;
-use utils::POINTER_SIZE;
+use compiler::machine_code::CompiledCallsite;
+use log;
+use runtime::*;
 use std::collections::HashMap;
 use std::ops::Deref;
-use compiler::machine_code::CompiledCallsite;
-use runtime::*;
-use log;
+use utils::Address;
+use utils::POINTER_SIZE;
 
 /// runtime function to deal with exception (unwind stack, find catch block, and restore)
 /// This function is called by muentry_throw_exception() which gets emitted for THROW instruction
@@ -68,7 +68,6 @@ pub extern "C" fn throw_exception_internal(exception_obj: Address, frame_cursor:
 
         print_backtrace(frame_cursor, compiled_callsite_table.deref());
         loop {
-
             // Lookup the table for the callsite
             trace!("Callsite: 0x{:x}", callsite);
             trace!("\tprevious_frame_pointer: 0x{:x}", previous_frame_pointer);
@@ -100,7 +99,7 @@ pub extern "C" fn throw_exception_internal(exception_obj: Address, frame_cursor:
                 );
                 sp = get_previous_stack_pointer(
                     current_frame_pointer,
-                    callsite_info.stack_args_size
+                    callsite_info.stack_args_size,
                 );
                 trace!("\tRestoring SP to: 0x{:x}", sp);
 
@@ -153,7 +152,6 @@ fn print_frame(cursor: Address) {
                 }
             });
         }
-
     }
 }
 
@@ -204,10 +202,7 @@ fn print_backtrace(base: Address, compiled_callsite_table: &HashMap<Address, Com
             let (func_name, func_start) = get_function_info(callsite);
             debug!(
                 "\tframe {:2}: 0x{:x} - {} at 0x{:x}",
-                frame_count,
-                func_start,
-                func_name,
-                callsite
+                frame_count, func_start, func_name, callsite
             );
             debug!("\tother native frames...");
             break;

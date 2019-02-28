@@ -19,17 +19,17 @@
 extern crate mu_gc as gc;
 pub use self::gc::*;
 
-use utils::ByteSize;
-use utils::ObjectReference;
 use ast::ir::*;
 use ast::ptr::*;
 use ast::types::*;
-use utils::*;
-use utils::math;
-use compiler::backend::RegGroup;
 use compiler::backend::BackendType;
-use runtime::ValueLocation;
+use compiler::backend::RegGroup;
 use runtime::thread::MuThread;
+use runtime::ValueLocation;
+use utils::math;
+use utils::ByteSize;
+use utils::ObjectReference;
+use utils::*;
 use vm::VM;
 
 /// we do not allocate hybrid into tiny object space (hybrid should be at least 32 bytes)
@@ -50,14 +50,13 @@ pub fn gen_object_encode(backend_ty: &BackendType, size: ByteSize, vm: &VM) -> O
     let full_tyid = {
         match backend_ty.gc_type_hybrid_full {
             Some(ref enc) => vm.get_gc_type_id(enc),
-            None => 0
+            None => 0,
         }
     };
 
     debug!(
         "ENCODE: gen_object_encode: {:?}, size: {}",
-        backend_ty,
-        size
+        backend_ty, size
     );
     debug!("ENCODE: gc_ty: {}, full_gc_ty: {}", gc_tyid, full_tyid);
 
@@ -69,7 +68,7 @@ pub fn gen_object_encode_internal(
     gc_tyid: TypeID,
     full_tyid: TypeID,
     size: ByteSize,
-    vm: &VM
+    vm: &VM,
 ) -> ObjectEncode {
     let size = math::align_up(size, POINTER_SIZE);
     if size <= MAX_TINY_OBJECT {
@@ -121,7 +120,7 @@ pub extern "C" fn muentry_alloc_var_size(
     var_len: usize,
     align: ByteSize,
     tyid: TypeID,
-    full_tyid: TypeID
+    full_tyid: TypeID,
 ) -> ObjectReference {
     debug_assert!(MuThread::has_current());
     let cur_thread = MuThread::current_mut();
@@ -145,7 +144,7 @@ pub extern "C" fn muentry_alloc_var_size(
         ObjectEncode::Tiny(_) => unreachable!(),
         ObjectEncode::Small(enc) => muentry_init_small_object(mutator, res, enc),
         ObjectEncode::Medium(enc) => muentry_init_medium_object(mutator, res, enc),
-        ObjectEncode::Large(enc) => muentry_init_large_object(mutator, res, enc)
+        ObjectEncode::Large(enc) => muentry_init_large_object(mutator, res, enc),
     }
 
     res
@@ -176,7 +175,7 @@ fn allocate(
     allocator: *mut Mutator,
     size: ByteSize,
     align: ByteSize,
-    encode: ObjectEncode
+    encode: ObjectEncode,
 ) -> ObjectReference {
     let size = math::align_up(size, POINTER_SIZE);
     // allocate
@@ -212,7 +211,7 @@ pub fn allocate_hybrid(
     ty: P<MuType>,
     len: usize,
     backendtype: Box<BackendType>,
-    vm: &VM
+    vm: &VM,
 ) -> Address {
     let size = check_hybrid_size(backendtype.size + backendtype.elem_size.unwrap() * len);
     let encode = gen_object_encode(&backendtype, size, vm);
@@ -225,16 +224,14 @@ pub fn allocate_hybrid(
 pub fn allocate_global(
     iref_global: P<Value>,
     backendtype: Box<BackendType>,
-    vm: &VM
+    vm: &VM,
 ) -> ValueLocation {
     let referenced_type = match iref_global.ty.get_referent_ty() {
         Some(ty) => ty,
-        None => {
-            panic!(
-                "expected global to be an iref type, found {}",
-                iref_global.ty
-            )
-        }
+        None => panic!(
+            "expected global to be an iref type, found {}",
+            iref_global.ty
+        ),
     };
 
     assert!(

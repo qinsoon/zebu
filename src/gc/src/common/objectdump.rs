@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::*;
-use objectmodel::*;
-use heap::*;
-use heap::immix::*;
 use heap::freelist::*;
+use heap::immix::*;
+use heap::*;
+use objectmodel::*;
+use utils::*;
 
 use std::collections::HashMap;
 use std::mem::transmute;
 
 pub struct HeapDump {
     pub objects: HashMap<Address, ObjectDump>,
-    pub relocatable_refs: HashMap<Address, String>
+    pub relocatable_refs: HashMap<Address, String>,
 }
 
 pub struct ObjectDump {
@@ -31,7 +31,7 @@ pub struct ObjectDump {
     pub size: ByteSize,
     pub align: ByteSize,
     pub encode: ObjectEncode,
-    pub reference_offsets: Vec<ByteSize> // based on reference_addr
+    pub reference_offsets: Vec<ByteSize>, // based on reference_addr
 }
 
 impl HeapDump {
@@ -40,7 +40,7 @@ impl HeapDump {
         let mut work_queue: Vec<Address> = roots;
         let mut heap: HeapDump = HeapDump {
             objects: HashMap::new(),
-            relocatable_refs: HashMap::new()
+            relocatable_refs: HashMap::new(),
         };
 
         while !work_queue.is_empty() {
@@ -84,7 +84,7 @@ impl HeapDump {
                     size: encode.size(),
                     align: MINIMAL_ALIGNMENT,
                     encode: ObjectEncode::Tiny(encode),
-                    reference_offsets: ref_offsets
+                    reference_offsets: ref_offsets,
                 }
             }
             SpaceDescriptor::ImmixNormal => {
@@ -132,7 +132,7 @@ impl HeapDump {
                     } else {
                         ObjectEncode::Medium(encode)
                     },
-                    reference_offsets: ref_offsets
+                    reference_offsets: ref_offsets,
                 }
             }
             SpaceDescriptor::Freelist => {
@@ -161,10 +161,10 @@ impl HeapDump {
                     size: encode.size(),
                     align: ty_encode.align,
                     encode: ObjectEncode::Large(encode),
-                    reference_offsets: ref_offsets
+                    reference_offsets: ref_offsets,
                 }
             }
-            SpaceDescriptor::Immortal => unimplemented!()
+            SpaceDescriptor::Immortal => unimplemented!(),
         }
     }
 
@@ -207,10 +207,7 @@ impl fmt::Debug for ObjectDump {
         write!(
             f,
             "PersistedObject({}, {} bytes, {} bytes aligned, refs at {:?})",
-            self.addr,
-            self.size,
-            self.align,
-            self.reference_offsets
+            self.addr, self.size, self.align, self.reference_offsets
         )
     }
 }

@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compiler::CompilerPass;
 use ast::ir::*;
-use vm::VM;
-use compiler::machine_code::CompiledFunction;
 use compiler::backend;
+use compiler::machine_code::CompiledFunction;
+use compiler::CompilerPass;
+use vm::VM;
 
 use std::any::Any;
 
 pub struct PeepholeOptimization {
-    name: &'static str
+    name: &'static str,
 }
 
 impl CompilerPass for PeepholeOptimization {
@@ -78,7 +78,7 @@ impl CompilerPass for PeepholeOptimization {
 impl PeepholeOptimization {
     pub fn new() -> PeepholeOptimization {
         PeepholeOptimization {
-            name: "Peephole Optimization"
+            name: "Peephole Optimization",
         }
     }
 
@@ -102,13 +102,13 @@ impl PeepholeOptimization {
             let src_machine_reg: MuID = {
                 match cf.temps.get(&src) {
                     Some(reg) => *reg,
-                    None => src
+                    None => src,
                 }
             };
             let dst_machine_reg: MuID = {
                 match cf.temps.get(&dst) {
                     Some(reg) => *reg,
-                    None => dst
+                    None => dst,
                 }
             };
 
@@ -116,8 +116,7 @@ impl PeepholeOptimization {
             if backend::is_aliased(src_machine_reg, dst_machine_reg) {
                 info!(
                     "move between {} and {} is redundant! removed",
-                    src_machine_reg,
-                    dst_machine_reg
+                    src_machine_reg, dst_machine_reg
                 );
                 // redundant, remove this move
                 cf.mc_mut().set_inst_nop(inst);
@@ -218,10 +217,10 @@ impl PeepholeOptimization {
                                 cur_inst = first_inst;
                                 last_dest = Some((dest.clone(), dest2.clone()));
                             }
-                            None => break
+                            None => break,
                         }
                     }
-                    None => break
+                    None => break,
                 }
             }
             last_dest
@@ -233,10 +232,7 @@ impl PeepholeOptimization {
 
             info!(
                 "inst {} chain jumps to {}, rewrite as branching to {} (successor: {})",
-                orig_inst,
-                final_dest,
-                final_dest,
-                first_inst
+                orig_inst, final_dest, final_dest, first_inst
             );
             mc.replace_branch_dest(inst, old_first_inst, &final_dest, first_inst);
         }

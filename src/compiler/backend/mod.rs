@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Code emission pass. May as well emit dot graph for IR and generated code.
+pub mod code_emission;
 /// A instruction selection pass. Uses simple tree pattern matching.
 pub mod inst_sel;
 /// A Dominator Tree pass for machine code.
 pub mod mc_loopanalysis;
-/// A register allocation pass. Graph coloring.
-pub mod reg_alloc;
 /// A peephole optimization pass after register allocation.
 pub mod peephole_opt;
-/// Code emission pass. May as well emit dot graph for IR and generated code.
-pub mod code_emission;
+/// A register allocation pass. Graph coloring.
+pub mod reg_alloc;
 
-use std;
-use utils::*;
-use utils::math::align_up;
-use runtime::mm::*;
 use num::integer::lcm;
+use runtime::mm::*;
+use std;
+use utils::math::align_up;
+use utils::*;
 
 /// for ahead-of-time compilation (boot image making), the file contains a persisted VM,
 /// a persisted heap, constants. This allows the VM to resume execution with
@@ -48,57 +48,14 @@ pub type Mem<'a> = &'a P<Value>;
 #[path = "arch/x86_64/mod.rs"]
 pub mod x86_64;
 
-/// estimates how many machine instructions are needed for a Mu instruction
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::estimate_insts_for_ir;
-/// initializes machine registers in the function context
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::init_machine_regs_for_func;
-/// checks if two machine registers are alias (the same register)
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::is_aliased;
-/// gets color for a machine register (e.g. AH, AX, EAX all have color of RAX)
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::get_color_for_precolored;
-/// returns the number of registers in a given RegGroup
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::number_of_usable_regs_in_group;
-/// returns the number of all machine registers
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::number_of_all_regs;
 /// returns a hashmap of all the machine registers
 #[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::all_regs;
 /// returns all usable registers (machine registers that can be assigned to temporaries)
 #[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::all_usable_regs;
-/// returns RegGroup for a machine register
 #[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::pick_group_for_reg;
-/// checks if a register is callee saved
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::is_callee_saved;
-/// number of callee saved registers
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::CALLEE_SAVED_COUNT;
-/// gets offset for callee saved registers (used for exception table)
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::get_callee_saved_offset;
-/// gets frame pointer for previous frame
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::get_previous_frame_pointer;
-/// gets return address for current frame
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::get_return_address;
-/// sets frame pointer for previous frame
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::set_previous_frame_pointer;
-/// sets return address for current frame
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::set_return_address;
-/// gets staci pointer for previous frame
-#[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::get_previous_stack_pointer;
+pub use compiler::backend::x86_64::call_stack_size;
 /// emits code for a function version (the function needs to be compiled first)
 #[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::emit_code;
@@ -109,66 +66,73 @@ pub use compiler::backend::x86_64::emit_context;
 /// emits context with consideration of relocation info
 #[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::emit_context_with_reloc;
+/// estimates how many machine instructions are needed for a Mu instruction
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::estimate_insts_for_ir;
+/// gets offset for callee saved registers (used for exception table)
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::get_callee_saved_offset;
+/// gets color for a machine register (e.g. AH, AX, EAX all have color of RAX)
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::get_color_for_precolored;
+/// gets frame pointer for previous frame
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::get_previous_frame_pointer;
+/// gets staci pointer for previous frame
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::get_previous_stack_pointer;
+/// gets return address for current frame
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::get_return_address;
+/// initializes machine registers in the function context
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::init_machine_regs_for_func;
+/// checks if two machine registers are alias (the same register)
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::is_aliased;
+/// checks if a register is callee saved
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::is_callee_saved;
+/// returns the number of all machine registers
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::number_of_all_regs;
+/// returns the number of registers in a given RegGroup
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::number_of_usable_regs_in_group;
+/// returns RegGroup for a machine register
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::pick_group_for_reg;
+/// sets frame pointer for previous frame
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::set_previous_frame_pointer;
+/// sets return address for current frame
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::set_return_address;
 /// rewrites a compiled Mu function with given spilling info
 /// (inserting load/store for spilled temporaries)
 #[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::spill_rewrite;
 #[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::ARGUMENT_GPRS;
-#[cfg(target_arch = "x86_64")]
 pub use compiler::backend::x86_64::ARGUMENT_FPRS;
 #[cfg(target_arch = "x86_64")]
-pub use compiler::backend::x86_64::call_stack_size;
+pub use compiler::backend::x86_64::ARGUMENT_GPRS;
+/// number of callee saved registers
+#[cfg(target_arch = "x86_64")]
+pub use compiler::backend::x86_64::CALLEE_SAVED_COUNT;
 
 /// --- aarch64 backend ---
 #[cfg(target_arch = "aarch64")]
 #[path = "arch/aarch64/mod.rs"]
 pub mod aarch64;
 
-/// estimates how many machine instructions are needed for a Mu instruction
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::estimate_insts_for_ir;
-/// initializes machine registers in the function context
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::init_machine_regs_for_func;
-/// checks if two machine registers are alias (the same register)
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::is_aliased;
-/// gets color for a machine register
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::get_color_for_precolored;
-/// returns the number of registers in a given RegGroup
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::number_of_usable_regs_in_group;
-/// returns the number of all machine registers
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::number_of_all_regs;
 /// returns a hashmap of all the machine registers
 #[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::all_regs;
 /// returns all usable registers (machine registers that can be assigned to temporaries)
 #[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::all_usable_regs;
-/// returns RegGroup for a machine register
 #[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::pick_group_for_reg;
-/// checks if a register is callee saved
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::is_callee_saved;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::CALLEE_SAVED_COUNT;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::get_callee_saved_offset;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::get_previous_frame_pointer;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::get_return_address;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::get_previous_stack_pointer;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::set_previous_frame_pointer;
-#[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::set_return_address;
+pub use compiler::backend::aarch64::call_stack_size;
 /// emits code for a function version (the function needs to be compiled first)
 #[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::emit_code;
@@ -179,21 +143,57 @@ pub use compiler::backend::aarch64::emit_context;
 /// emits context with consideration of relocation info
 #[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::emit_context_with_reloc;
+/// estimates how many machine instructions are needed for a Mu instruction
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::estimate_insts_for_ir;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::get_callee_saved_offset;
+/// gets color for a machine register
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::get_color_for_precolored;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::get_previous_frame_pointer;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::get_previous_stack_pointer;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::get_return_address;
+/// initializes machine registers in the function context
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::init_machine_regs_for_func;
+/// checks if two machine registers are alias (the same register)
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::is_aliased;
+/// checks if a register is callee saved
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::is_callee_saved;
+/// returns the number of all machine registers
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::number_of_all_regs;
+/// returns the number of registers in a given RegGroup
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::number_of_usable_regs_in_group;
+/// returns RegGroup for a machine register
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::pick_group_for_reg;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::set_previous_frame_pointer;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::set_return_address;
 /// rewrites a compiled Mu function with given spilling info
 /// (inserting load/store for spilled temporaries)
 #[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::spill_rewrite;
 #[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::ARGUMENT_GPRS;
-#[cfg(target_arch = "aarch64")]
 pub use compiler::backend::aarch64::ARGUMENT_FPRS;
 #[cfg(target_arch = "aarch64")]
-pub use compiler::backend::aarch64::call_stack_size;
+pub use compiler::backend::aarch64::ARGUMENT_GPRS;
+#[cfg(target_arch = "aarch64")]
+pub use compiler::backend::aarch64::CALLEE_SAVED_COUNT;
 
-use vm::VM;
-use ast::types::*;
-use ast::ptr::*;
 use ast::ir::*;
+use ast::ptr::*;
+use ast::types::*;
+use vm::VM;
 
 /// BackendType describes storage type info for a MuType, including
 /// size, alignment, struct layout, array element padded size, GC type.
@@ -214,7 +214,7 @@ pub struct BackendType {
     pub gc_type: Option<TypeEncode>,
     /// GC type for full encoding of hybrid types, as hybrid types can be arbitrarily long,
     /// and we need a full encoding
-    pub gc_type_hybrid_full: Option<TypeEncode>
+    pub gc_type_hybrid_full: Option<TypeEncode>,
 }
 
 rodal_struct!(BackendType {
@@ -245,13 +245,11 @@ impl BackendType {
         let mut hybrid_full_encode = None;
         let encode = match self.ty.v {
             // integer
-            MuType_::Int(size_in_bit) => {
-                match size_in_bit {
-                    1...64 => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 1),
-                    128 => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 2),
-                    _ => unimplemented!()
-                }
-            }
+            MuType_::Int(size_in_bit) => match size_in_bit {
+                1...64 => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 1),
+                128 => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 2),
+                _ => unimplemented!(),
+            },
             // void
             MuType_::Void => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 1),
             // ref
@@ -259,11 +257,11 @@ impl BackendType {
             // weakref
             MuType_::WeakRef(_) => TypeEncode::short_weakref(),
             // native pointer or opaque ref
-            MuType_::UPtr(_) |
-            MuType_::UFuncPtr(_) |
-            MuType_::FuncRef(_) |
-            MuType_::ThreadRef |
-            MuType_::StackRef => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 1),
+            MuType_::UPtr(_)
+            | MuType_::UFuncPtr(_)
+            | MuType_::FuncRef(_)
+            | MuType_::ThreadRef
+            | MuType_::StackRef => TypeEncode::short_noref(MINIMAL_ALIGNMENT, 1),
             // tag ref
             MuType_::Tagref64 => TypeEncode::short_tagref(),
             // floating point
@@ -296,7 +294,7 @@ impl BackendType {
                         &mut fix_word_tys,
                         fix_ty_offsets[i],
                         &fix_tys[i],
-                        vm
+                        vm,
                     );
 
                     if cfg!(debug_assertions) && i != fix_tys.len() - 1 {
@@ -311,15 +309,15 @@ impl BackendType {
                 hybrid_full_encode = Some(TypeEncode::full(
                     check_alignment(self.alignment),
                     fix_word_tys.clone(),
-                    var_word_tys.clone()
+                    var_word_tys.clone(),
                 ));
                 TypeEncode::short_hybrid(
                     check_alignment(self.alignment),
                     fix_word_tys,
-                    var_word_tys
+                    var_word_tys,
                 )
             }
-            _ => unimplemented!()
+            _ => unimplemented!(),
         };
 
         self.gc_type = Some(encode);
@@ -333,12 +331,11 @@ impl BackendType {
         res: &mut Vec<WordType>,
         cur_offset: ByteSize,
         cur_ty: &P<MuType>,
-        vm: &VM
+        vm: &VM,
     ) -> ByteSize {
         debug!(
             "append_word_ty(): cur_offset={}, cur_ty={}",
-            cur_offset,
-            cur_ty
+            cur_offset, cur_ty
         );
         let cur_backend_ty = BackendType::resolve(cur_ty, vm);
         let cur_offset = math::align_up(cur_offset, cur_backend_ty.alignment);
@@ -362,11 +359,11 @@ impl BackendType {
                 debug_assert!(pointer_aligned);
                 res.push(WordType::WeakRef);
             }
-            MuType_::UPtr(_) |
-            MuType_::UFuncPtr(_) |
-            MuType_::FuncRef(_) |
-            MuType_::ThreadRef |
-            MuType_::StackRef => {
+            MuType_::UPtr(_)
+            | MuType_::UFuncPtr(_)
+            | MuType_::FuncRef(_)
+            | MuType_::ThreadRef
+            | MuType_::StackRef => {
                 debug_assert!(pointer_aligned);
                 res.push(WordType::NonRef);
             }
@@ -410,7 +407,7 @@ impl BackendType {
                 }
             }
             MuType_::Hybrid(_) => unreachable!(),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
         cur_offset + cur_backend_ty.size
     }
@@ -420,56 +417,54 @@ impl BackendType {
     pub fn resolve(ty: &P<MuType>, vm: &VM) -> BackendType {
         match ty.v {
             // integer
-            MuType_::Int(size_in_bit) => {
-                match size_in_bit {
-                    1...8 => BackendType {
-                        ty: ty.clone(),
-                        size: 1,
-                        alignment: 1,
-                        struct_layout: None,
-                        elem_size: None,
-                        gc_type: None,
-                        gc_type_hybrid_full: None
-                    },
-                    9...16 => BackendType {
-                        ty: ty.clone(),
-                        size: 2,
-                        alignment: 2,
-                        struct_layout: None,
-                        elem_size: None,
-                        gc_type: None,
-                        gc_type_hybrid_full: None
-                    },
-                    17...32 => BackendType {
-                        ty: ty.clone(),
-                        size: 4,
-                        alignment: 4,
-                        struct_layout: None,
-                        elem_size: None,
-                        gc_type: None,
-                        gc_type_hybrid_full: None
-                    },
-                    33...64 => BackendType {
-                        ty: ty.clone(),
-                        size: 8,
-                        alignment: 8,
-                        struct_layout: None,
-                        elem_size: None,
-                        gc_type: None,
-                        gc_type_hybrid_full: None
-                    },
-                    128 => BackendType {
-                        ty: ty.clone(),
-                        size: 16,
-                        alignment: 16,
-                        struct_layout: None,
-                        elem_size: None,
-                        gc_type: None,
-                        gc_type_hybrid_full: None
-                    },
-                    _ => unimplemented!()
-                }
-            }
+            MuType_::Int(size_in_bit) => match size_in_bit {
+                1...8 => BackendType {
+                    ty: ty.clone(),
+                    size: 1,
+                    alignment: 1,
+                    struct_layout: None,
+                    elem_size: None,
+                    gc_type: None,
+                    gc_type_hybrid_full: None,
+                },
+                9...16 => BackendType {
+                    ty: ty.clone(),
+                    size: 2,
+                    alignment: 2,
+                    struct_layout: None,
+                    elem_size: None,
+                    gc_type: None,
+                    gc_type_hybrid_full: None,
+                },
+                17...32 => BackendType {
+                    ty: ty.clone(),
+                    size: 4,
+                    alignment: 4,
+                    struct_layout: None,
+                    elem_size: None,
+                    gc_type: None,
+                    gc_type_hybrid_full: None,
+                },
+                33...64 => BackendType {
+                    ty: ty.clone(),
+                    size: 8,
+                    alignment: 8,
+                    struct_layout: None,
+                    elem_size: None,
+                    gc_type: None,
+                    gc_type_hybrid_full: None,
+                },
+                128 => BackendType {
+                    ty: ty.clone(),
+                    size: 16,
+                    alignment: 16,
+                    struct_layout: None,
+                    elem_size: None,
+                    gc_type: None,
+                    gc_type_hybrid_full: None,
+                },
+                _ => unimplemented!(),
+            },
             // reference of any type
             MuType_::Ref(_) | MuType_::IRef(_) | MuType_::WeakRef(_) => BackendType {
                 ty: ty.clone(),
@@ -478,21 +473,21 @@ impl BackendType {
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             // pointer/opque ref
-            MuType_::UPtr(_) |
-            MuType_::UFuncPtr(_) |
-            MuType_::FuncRef(_) |
-            MuType_::ThreadRef |
-            MuType_::StackRef => BackendType {
+            MuType_::UPtr(_)
+            | MuType_::UFuncPtr(_)
+            | MuType_::FuncRef(_)
+            | MuType_::ThreadRef
+            | MuType_::StackRef => BackendType {
                 ty: ty.clone(),
                 size: 8,
                 alignment: 8,
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             // tagref
             MuType_::Tagref64 => BackendType {
@@ -502,7 +497,7 @@ impl BackendType {
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             // floating point
             MuType_::Float => BackendType {
@@ -512,7 +507,7 @@ impl BackendType {
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             MuType_::Double => BackendType {
                 ty: ty.clone(),
@@ -521,7 +516,7 @@ impl BackendType {
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             // array
             MuType_::Array(ref ele_ty, len) => {
@@ -545,7 +540,7 @@ impl BackendType {
                     struct_layout: None,
                     elem_size: Some(elem_size),
                     gc_type: None,
-                    gc_type_hybrid_full: None
+                    gc_type_hybrid_full: None,
                 }
             }
             // struct
@@ -590,10 +585,10 @@ impl BackendType {
                 struct_layout: None,
                 elem_size: None,
                 gc_type: None,
-                gc_type_hybrid_full: None
+                gc_type_hybrid_full: None,
             },
             // vector
-            MuType_::Vector(_, _) => unimplemented!()
+            MuType_::Vector(_, _) => unimplemented!(),
         }
     }
 
@@ -609,7 +604,7 @@ impl BackendType {
             struct_layout: Some(offsets),
             elem_size: None,
             gc_type: None,
-            gc_type_hybrid_full: None
+            gc_type_hybrid_full: None,
         }
     }
 
@@ -647,9 +642,9 @@ impl fmt::Display for BackendType {
         write!(
             f,
             "{} bytes ({} bytes aligned), ",
-            self.size,
-            self.alignment
-        ).unwrap();
+            self.size, self.alignment
+        )
+        .unwrap();
         if self.struct_layout.is_some() {
             use utils::vec_utils;
 
@@ -669,7 +664,7 @@ pub enum RegGroup {
     /// requires two general purpose register
     GPREX,
     /// floating point register
-    FPR
+    FPR,
 }
 
 rodal_enum!(RegGroup { GPR, GPREX, FPR });
@@ -682,20 +677,20 @@ impl RegGroup {
             MuType_::Int(len) if len <= 64 => RegGroup::GPR,
             MuType_::Int(len) if len == 128 => RegGroup::GPREX,
 
-            MuType_::Ref(_) |
-            MuType_::IRef(_) |
-            MuType_::WeakRef(_) |
-            MuType_::UPtr(_) |
-            MuType_::ThreadRef |
-            MuType_::StackRef |
-            MuType_::Tagref64 |
-            MuType_::FuncRef(_) |
-            MuType_::UFuncPtr(_) => RegGroup::GPR,
+            MuType_::Ref(_)
+            | MuType_::IRef(_)
+            | MuType_::WeakRef(_)
+            | MuType_::UPtr(_)
+            | MuType_::ThreadRef
+            | MuType_::StackRef
+            | MuType_::Tagref64
+            | MuType_::FuncRef(_)
+            | MuType_::UFuncPtr(_) => RegGroup::GPR,
 
             MuType_::Float => RegGroup::FPR,
             MuType_::Double => RegGroup::FPR,
 
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 

@@ -14,23 +14,21 @@
 
 use heap::*;
 use objectmodel::*;
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering};
+use std::sync::{Arc, Condvar, Mutex, RwLock};
 use MY_GC;
-use std::sync::atomic::{AtomicIsize, AtomicUsize, AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, Condvar, RwLock};
 
 use crossbeam::sync::chase_lev::*;
+use std::mem::transmute;
+use std::sync::atomic;
 use std::sync::mpsc;
 use std::sync::mpsc::channel;
 use std::thread;
-use std::sync::atomic;
-use std::mem::transmute;
 
 lazy_static! {
-    static ref STW_COND : Arc<(Mutex<usize>, Condvar)> = {
-        Arc::new((Mutex::new(0), Condvar::new()))
-    };
-
-    static ref ROOTS : RwLock<Vec<ObjectReference>> = RwLock::new(vec![]);
+    static ref STW_COND: Arc<(Mutex<usize>, Condvar)> =
+        { Arc::new((Mutex::new(0), Condvar::new())) };
+    static ref ROOTS: RwLock<Vec<ObjectReference>> = RwLock::new(vec![]);
 }
 
 pub static ENABLE_GC: AtomicBool = AtomicBool::new(false);
@@ -237,7 +235,7 @@ fn gc() {
 
     GC_COUNT.store(
         GC_COUNT.load(atomic::Ordering::SeqCst) + 1,
-        atomic::Ordering::SeqCst
+        atomic::Ordering::SeqCst,
     );
 
     // each space prepares for GC
@@ -309,7 +307,9 @@ pub fn start_trace(work_stack: &mut Vec<ObjectReference>) {
         for _ in 0..n_gcthreads {
             let new_stealer = stealer.clone();
             let new_sender = sender.clone();
-            let t = thread::spawn(move || { start_steal_trace(new_stealer, new_sender); });
+            let t = thread::spawn(move || {
+                start_steal_trace(new_stealer, new_sender);
+            });
             gc_threads.push(t);
         }
 
@@ -320,13 +320,13 @@ pub fn start_trace(work_stack: &mut Vec<ObjectReference>) {
             let recv = receiver.recv();
             match recv {
                 Ok(obj) => worker.push(obj),
-                Err(_) => break
+                Err(_) => break,
             }
         }
 
         match worker.try_pop() {
             Some(obj_ref) => worker.push(obj_ref),
-            None => break
+            None => break,
         }
     }
 }
@@ -346,7 +346,7 @@ fn start_steal_trace(stealer: Stealer<ObjectReference>, job_sender: mpsc::Sender
                 let ret = match work {
                     Steal::Empty => return,
                     Steal::Abort => continue,
-                    Steal::Data(obj) => obj
+                    Steal::Data(obj) => obj,
                 };
                 trace_if!(TRACE_GC, "got object {} from global queue", ret);
                 ret
@@ -361,7 +361,7 @@ fn start_steal_trace(stealer: Stealer<ObjectReference>, job_sender: mpsc::Sender
 pub fn steal_trace_object(
     obj: ObjectReference,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     match SpaceDescriptor::get(obj) {
         SpaceDescriptor::ImmixTiny => {
@@ -408,7 +408,9 @@ pub fn steal_trace_object(
             hdr.gc_byte = 1;
             unsafe {
                 match hdr.encode {
-                    ObjectEncode::Tiny(ref enc) => trace_tiny_object(obj, enc, local_queue, job_sender),
+                    ObjectEncode::Tiny(ref enc) => {
+                        trace_tiny_object(obj, enc, local_queue, job_sender)
+                    }
                     ObjectEncode::Small(ref enc) => {
                         trace_small_object(obj, enc, local_queue, job_sender)
                     }
@@ -429,7 +431,7 @@ fn trace_tiny_object(
     obj: ObjectReference,
     encode: &TinyObjectEncode,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     trace_if!(TRACE_GC, "  trace tiny obj: {} ({:?})", obj, encode);
     for i in 0..encode.n_fields() {
@@ -438,7 +440,7 @@ fn trace_tiny_object(
             obj,
             i << LOG_POINTER_SIZE,
             local_queue,
-            job_sender
+            job_sender,
         )
     }
 }
@@ -447,7 +449,7 @@ fn trace_small_object(
     obj: ObjectReference,
     encode: &SmallObjectEncode,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     let type_id = encode.type_id();
     let size = encode.size();
@@ -458,7 +460,7 @@ fn trace_small_object(
         &GlobalTypeTable::table()[type_id],
         size,
         local_queue,
-        job_sender
+        job_sender,
     );
 }
 
@@ -466,7 +468,7 @@ fn trace_medium_object(
     obj: ObjectReference,
     encode: &MediumObjectEncode,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     let type_id = encode.type_id();
     let size = encode.size();
@@ -477,7 +479,7 @@ fn trace_medium_object(
         &GlobalTypeTable::table()[type_id],
         size,
         local_queue,
-        job_sender
+        job_sender,
     );
 }
 
@@ -486,7 +488,7 @@ fn trace_short_type_encode(
     type_encode: &ShortTypeEncode,
     type_size: ByteSize,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     let mut offset: ByteSize = 0;
     trace_if!(TRACE_GC, "  -fix part-");
@@ -511,7 +513,7 @@ fn trace_large_object(
     obj: ObjectReference,
     encode: &LargeObjectEncode,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     let tyid = encode.type_id();
     let ty = GlobalTypeTable::get_full_type(tyid);
@@ -541,7 +543,7 @@ fn trace_word(
     obj: ObjectReference,
     offset: ByteSize,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     trace_if!(
         TRACE_GC,
@@ -576,7 +578,7 @@ fn trace_word(
                         debug!("edge {} is traced, skip", edge);
                     }
                 }
-                SpaceDescriptor::Immortal => unimplemented!()
+                SpaceDescriptor::Immortal => unimplemented!(),
             }
         }
         WordType::WeakRef | WordType::TaggedRef => {
@@ -591,7 +593,7 @@ fn trace_word(
 fn steal_process_edge(
     edge: ObjectReference,
     local_queue: &mut Vec<ObjectReference>,
-    job_sender: &mpsc::Sender<ObjectReference>
+    job_sender: &mpsc::Sender<ObjectReference>,
 ) {
     if local_queue.len() >= PUSH_BACK_THRESHOLD {
         job_sender.send(edge).unwrap();

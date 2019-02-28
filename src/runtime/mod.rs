@@ -12,38 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils;
-use utils::Word;
-use utils::Address;
 use ast::ir::*;
-use vm::VM;
 use compiler::backend::RegGroup;
+use utils;
+use utils::Address;
+use utils::Word;
+use vm::VM;
 
 use libc::*;
-use std;
-use std::fmt;
-use std::ffi::CString;
-use std::ffi::CStr;
-use std::sync::Arc;
 use rodal;
+use std;
+use std::ffi::CStr;
+use std::ffi::CString;
+use std::fmt;
+use std::sync::Arc;
 
 use libc::c_void;
 
-/// memory management: allocation, reclamation
-/// (the actual code is in src/gc, which gets re-exported in mm module)
-pub mod mm;
-/// thread management: stack, thread
-pub mod thread;
-/// mathematics functions
-pub mod math;
 /// a list of all entrypoints used by compiler to generate calls into runtime
 /// (where generated code entries the runtime)
 pub mod entrypoints;
 /// exception handling
 pub mod exception;
+/// mathematics functions
+pub mod math;
+/// memory management: allocation, reclamation
+/// (the actual code is in src/gc, which gets re-exported in mm module)
+pub mod mm;
+/// thread management: stack, thread
+pub mod thread;
 
-lazy_static!{
-    static ref UNKNOWN_FUNCTION_NAME : CName = Arc::new("UNKOWN".to_string());
+lazy_static! {
+    static ref UNKNOWN_FUNCTION_NAME: CName = Arc::new("UNKOWN".to_string());
 }
 /// returns the name for a symbol address (inverse of resolve_symbol)
 /// WARNING: Only use this for Mu symbols
@@ -76,22 +76,19 @@ pub fn get_function_info(function_addr: Address) -> (CName, Address) {
                 unsafe { CStr::from_ptr(info.dli_sname) }
                     .to_str()
                     .unwrap()
-                    .to_string()
+                    .to_string(),
             ),
-            Address::from_ptr(info.dli_saddr)
+            Address::from_ptr(info.dli_saddr),
         )
     } else {
         (
             UNKNOWN_FUNCTION_NAME.clone(),
-            Address::from_ptr(info.dli_saddr)
+            Address::from_ptr(info.dli_saddr),
         )
     }
-
 }
 
-
 /// returns address for a given symbol, e.g. function name
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 pub fn resolve_symbol(symbol: MuName) -> Address {
     use std::ptr;
 
@@ -113,17 +110,6 @@ pub fn resolve_symbol(symbol: MuName) -> Address {
     Address::from_ptr(ret)
 }
 
-use std::os::raw::c_char;
-//use std::os::raw::c_void;
-// This function is specific to sel4-rumprun platform
-// it replaces the resolve_symbol function provided by Linux and Mac
-// all other platforms (except sel4-rumprun) already provide this function
-#[cfg(feature = "sel4-rumprun-target-side")]
-#[link(name = "zebu_c_helpers")]
-extern "C" {
-    fn c_resolve_symbol(symbol: *const c_char) -> *const c_void;
-}
-
 // Although it is possible to directly \
 // compile, call and check results of Mu test functions \
 // in Linux and Mac, but in-order to unify testing styles \
@@ -142,19 +128,6 @@ extern "C" {
 // This code has been moved to thread.rs \
 // due to the linkage with libruntime.a happenning there once
 
-// TODO
-// resolve symbol is different from the one used for Linux and Mac
-#[cfg(feature = "sel4-rumprun-target-side")]
-pub fn resolve_symbol(symbol: String) -> Address {
-    debug!("Going to resolve Symbol -{}-", symbol);
-    let ret = unsafe { c_resolve_symbol(CString::new(symbol.clone()).unwrap().as_ptr()) };
-    if ret.is_null() {
-        panic!("failed to resolve symbol: {}", symbol.clone());
-    }
-    debug!("Symbol -{}- resolved", symbol);
-    Address::from_ptr(ret)
-}
-
 /// ValueLocation represents the runtime location for a value.
 /// The purpose of this data structure is to refer to a location in a unified way
 /// for both compile time (usually talking about symbols) and run time (talking about addresses)
@@ -171,7 +144,7 @@ pub enum ValueLocation {
     Relocatable(RegGroup, MuName), // TODO: This only works for mu entities (add a flag to indicate
     // if its native or have a different variant?)
     Direct(RegGroup, Address),   // Not dumped
-    Indirect(RegGroup, Address)  // Not dumped
+    Indirect(RegGroup, Address), // Not dumped
 }
 
 rodal_enum!(ValueLocation{(Register: group, id), (Constant: group, word),
@@ -184,7 +157,7 @@ impl fmt::Display for ValueLocation {
             &ValueLocation::Constant(_, val) => write!(f, "VL_Const: {}", val),
             &ValueLocation::Relocatable(_, ref name) => write!(f, "VL_Reloc: {}", name),
             &ValueLocation::Direct(_, addr) => write!(f, "VL_Direct: 0x{:x}", addr),
-            &ValueLocation::Indirect(_, addr) => write!(f, "VL_Indirect: 0x{:x}", addr)
+            &ValueLocation::Indirect(_, addr) => write!(f, "VL_Indirect: 0x{:x}", addr),
         }
     }
 }
@@ -219,7 +192,7 @@ impl ValueLocation {
             Constant::Double(f64_val) => {
                 ValueLocation::Constant(RegGroup::FPR, utils::mem::f64_to_raw(f64_val) as Word)
             }
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 
@@ -239,7 +212,7 @@ impl ValueLocation {
     pub fn to_relocatable(&self) -> MuName {
         match self {
             &ValueLocation::Relocatable(_, ref name) => name.clone(),
-            _ => panic!("expecting Relocatable location, found {}", self)
+            _ => panic!("expecting Relocatable location, found {}", self),
         }
     }
 }
@@ -270,7 +243,7 @@ pub extern "C" fn mu_main(
     edata: *const (),
     dumped_vm: *mut Arc<VM>,
     argc: c_int,
-    argv: *const *const c_char
+    argv: *const *const c_char,
 ) {
     VM::start_logging_env();
     debug!("mu_main() started...");
@@ -279,7 +252,7 @@ pub extern "C" fn mu_main(
     unsafe {
         rodal::load_asm_bounds(
             rodal::Address::from_ptr(dumped_vm),
-            rodal::Address::from_ptr(edata)
+            rodal::Address::from_ptr(edata),
         )
     };
     let vm = VM::resume_vm(dumped_vm);
@@ -313,7 +286,8 @@ pub extern "C" fn mu_main(
             args
         };
 
-        let threadlocal = vm.primordial_threadlocal
+        let threadlocal = vm
+            .primordial_threadlocal
             .read()
             .unwrap()
             .as_ref()

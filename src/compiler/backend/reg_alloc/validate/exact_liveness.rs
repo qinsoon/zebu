@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::LinkedHashMap;
-use utils::LinkedHashSet;
 use ast::ir::*;
 use compiler::machine_code::CompiledFunction;
+use utils::LinkedHashMap;
+use utils::LinkedHashSet;
 
 pub struct ExactLiveness {
     livein: LinkedHashMap<usize, LinkedHashSet<MuID>>,
     liveout: LinkedHashMap<usize, LinkedHashSet<MuID>>,
-    kill: LinkedHashMap<usize, LinkedHashSet<MuID>>
+    kill: LinkedHashMap<usize, LinkedHashSet<MuID>>,
 }
 
 impl ExactLiveness {
@@ -28,7 +28,7 @@ impl ExactLiveness {
         let mut ret = ExactLiveness {
             livein: LinkedHashMap::new(),
             liveout: LinkedHashMap::new(),
-            kill: LinkedHashMap::new()
+            kill: LinkedHashMap::new(),
         };
 
         ret.liveness_analysis(cf);
@@ -84,14 +84,14 @@ impl ExactLiveness {
     pub fn get_liveout(&self, index: usize) -> Option<LinkedHashSet<MuID>> {
         match self.liveout.get(&index) {
             Some(s) => Some(s.clone()),
-            None => None
+            None => None,
         }
     }
 
     pub fn get_kills(&self, index: usize) -> Option<LinkedHashSet<MuID>> {
         match self.kill.get(&index) {
             Some(s) => Some(s.clone()),
-            None => None
+            None => None,
         }
     }
 

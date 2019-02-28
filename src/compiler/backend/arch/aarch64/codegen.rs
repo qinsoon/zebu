@@ -16,8 +16,8 @@ use ast::ir::*;
 use ast::ptr::P;
 use runtime::ValueLocation;
 
+use compiler::backend::{Mem, Reg};
 use compiler::machine_code::MachineCode;
-use compiler::backend::{Reg, Mem};
 
 pub trait CodeGenerator {
     fn start_code(&mut self, func_name: MuName, entry: MuName) -> ValueLocation;
@@ -76,7 +76,6 @@ pub trait CodeGenerator {
         take the ZR (and vice versa)
     */
 
-
     // loads
     // supports the full full range of addressing modes
     fn emit_ldr(&mut self, dest: Reg /*GPR or FPR*/, src: Mem, signed: bool);
@@ -94,7 +93,7 @@ pub trait CodeGenerator {
         &mut self,
         dest1: Reg, /*GPR or FPR*/
         dest2: Reg, /*GPR or FPR*/
-        src: Mem
+        src: Mem,
     ); // [base, #simm7]
 
     // Stores
@@ -114,7 +113,7 @@ pub trait CodeGenerator {
         &mut self,
         dest: Mem,
         src1: Reg, /*GPR or FPR*/
-        src2: Reg  /*GPR or FPR*/
+        src2: Reg, /*GPR or FPR*/
     ); // [base, #simm7]
 
     // Calls
@@ -125,7 +124,7 @@ pub trait CodeGenerator {
         pe: Option<MuName>,
         args: Vec<P<Value>>,
         ret: Vec<P<Value>>,
-        is_native: bool
+        is_native: bool,
     ) -> Option<ValueLocation>;
     fn emit_blr(
         &mut self,
@@ -133,7 +132,7 @@ pub trait CodeGenerator {
         func: Reg,
         pe: Option<MuName>,
         args: Vec<P<Value>>,
-        ret: Vec<P<Value>>
+        ret: Vec<P<Value>>,
     ) -> Option<ValueLocation>;
     // Branches
     fn emit_b(&mut self, dest_name: MuName);
@@ -147,7 +146,7 @@ pub trait CodeGenerator {
         args: Vec<P<Value>>,
         ret: Vec<P<Value>>,
         is_native: bool,
-        may_return: bool
+        may_return: bool,
     ) -> Option<ValueLocation>;
     fn emit_br_call(
         &mut self,
@@ -156,9 +155,8 @@ pub trait CodeGenerator {
         pe: Option<MuName>,
         args: Vec<P<Value>>,
         ret: Vec<P<Value>>,
-        may_return: bool
+        may_return: bool,
     ) -> Option<ValueLocation>;
-
 
     fn emit_ret(&mut self, src: Reg);
     fn emit_cbnz(&mut self, src: Reg, dest_name: MuName);
@@ -241,7 +239,7 @@ pub trait CodeGenerator {
         src1: Reg, /*GPR or SP*/
         src2: Reg,
         signed: bool,
-        shift: u8
+        shift: u8,
     );
     fn emit_adds_ext(
         &mut self,
@@ -249,7 +247,7 @@ pub trait CodeGenerator {
         src1: Reg, /*GPR or SP*/
         src2: Reg,
         signed: bool,
-        shift: u8
+        shift: u8,
     );
     fn emit_sub_ext(
         &mut self,
@@ -257,7 +255,7 @@ pub trait CodeGenerator {
         src1: Reg, /*GPR or SP*/
         src2: Reg,
         signed: bool,
-        shift: u8
+        shift: u8,
     );
     fn emit_subs_ext(
         &mut self,
@@ -265,7 +263,7 @@ pub trait CodeGenerator {
         src1: Reg, /*GPR or SP*/
         src2: Reg,
         signed: bool,
-        shift: u8
+        shift: u8,
     );
 
     // Multiplication
@@ -334,7 +332,7 @@ pub trait CodeGenerator {
         dest: Reg, /*GPR or SP*/
         src1: Reg, /*GPR or SP*/
         src2: u16,
-        shift: bool
+        shift: bool,
     );
     fn emit_adds_imm(&mut self, dest: Reg, src1: Reg /*GPR or SP*/, src2: u16, shift: bool);
     fn emit_sub_imm(
@@ -342,7 +340,7 @@ pub trait CodeGenerator {
         dest: Reg, /*GPR or SP*/
         src1: Reg, /*GPR or SP*/
         src2: u16,
-        shift: bool
+        shift: bool,
     );
     fn emit_subs_imm(&mut self, dest: Reg, src1: Reg /*GPR or SP*/, src2: u16, shift: bool);
 
@@ -365,28 +363,28 @@ pub trait CodeGenerator {
         dest: Reg, /*64*/
         src1: Reg, /*32*/
         src2: Reg, /*32*/
-        src3: Reg  /*64*/
+        src3: Reg, /*64*/
     );
     fn emit_smsubl(
         &mut self,
         dest: Reg, /*64*/
         src1: Reg, /*32*/
         src2: Reg, /*32*/
-        src3: Reg  /*64*/
+        src3: Reg, /*64*/
     );
     fn emit_umaddl(
         &mut self,
         dest: Reg, /*64*/
         src1: Reg, /*32*/
         src2: Reg, /*32*/
-        src3: Reg  /*64*/
+        src3: Reg, /*64*/
     );
     fn emit_umsubl(
         &mut self,
         dest: Reg, /*64*/
         src1: Reg, /*32*/
         src2: Reg, /*32*/
-        src3: Reg  /*64*/
+        src3: Reg, /*64*/
     );
     fn emit_fmadd(&mut self, dest: Reg, src1: Reg, src2: Reg, src3: Reg);
     fn emit_fmsub(&mut self, dest: Reg, src1: Reg, src2: Reg, src3: Reg);

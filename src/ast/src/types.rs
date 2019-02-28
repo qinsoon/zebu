@@ -12,86 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ptr::P;
 use ir::*;
+use ptr::P;
 
-use utils::POINTER_SIZE;
 use utils::vec_utils;
+use utils::POINTER_SIZE;
 
 use std;
-use std::sync::atomic::{Ordering, AtomicPtr};
-use std::ptr;
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
+use std::ptr;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::sync::RwLock;
 
 // some common types that the compiler may use internally
 lazy_static! {
-    pub static ref ADDRESS_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(POINTER_SIZE * 8))
-    );
-
-    pub static ref UINT1_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(1))
-    );
-
-    pub static ref UINT8_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(8))
-    );
-
-    pub static ref UINT16_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(16))
-    );
-
-    pub static ref UINT32_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(32))
-    );
-
-    pub static ref UINT64_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(64))
-    );
-
-    pub static ref UINT128_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::int(128))
-    );
-
-    pub static ref FLOAT_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::float())
-    );
-
-    pub static ref DOUBLE_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::double())
-    );
-
-    pub static ref VOID_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::void())
-    );
-
-    pub static ref REF_VOID_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::muref(VOID_TYPE.clone()))
-    );
-
-    pub static ref IREF_VOID_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::iref(VOID_TYPE.clone()))
-    );
-
-    pub static ref UPTR_U8_TYPE: P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::uptr(UINT8_TYPE.clone()))
-    );
-
-    pub static ref UPTR_U64_TYPE: P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::uptr(UINT64_TYPE.clone()))
-    );
-
-    pub static ref STACKREF_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::StackRef)
-    );
-
-    pub static ref THREADREF_TYPE : P<MuType> = P(
-        MuType::new(new_internal_id(), MuType_::ThreadRef)
-    );
-
-    pub static ref INTERNAL_TYPES : Vec<P<MuType>> = vec![
+    pub static ref ADDRESS_TYPE: P<MuType> = P(MuType::new(
+        new_internal_id(),
+        MuType_::int(POINTER_SIZE * 8)
+    ));
+    pub static ref UINT1_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(1)));
+    pub static ref UINT8_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(8)));
+    pub static ref UINT16_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(16)));
+    pub static ref UINT32_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(32)));
+    pub static ref UINT64_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(64)));
+    pub static ref UINT128_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::int(128)));
+    pub static ref FLOAT_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::float()));
+    pub static ref DOUBLE_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::double()));
+    pub static ref VOID_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::void()));
+    pub static ref REF_VOID_TYPE: P<MuType> = P(MuType::new(
+        new_internal_id(),
+        MuType_::muref(VOID_TYPE.clone())
+    ));
+    pub static ref IREF_VOID_TYPE: P<MuType> = P(MuType::new(
+        new_internal_id(),
+        MuType_::iref(VOID_TYPE.clone())
+    ));
+    pub static ref UPTR_U8_TYPE: P<MuType> = P(MuType::new(
+        new_internal_id(),
+        MuType_::uptr(UINT8_TYPE.clone())
+    ));
+    pub static ref UPTR_U64_TYPE: P<MuType> = P(MuType::new(
+        new_internal_id(),
+        MuType_::uptr(UINT64_TYPE.clone())
+    ));
+    pub static ref STACKREF_TYPE: P<MuType> = P(MuType::new(new_internal_id(), MuType_::StackRef));
+    pub static ref THREADREF_TYPE: P<MuType> =
+        P(MuType::new(new_internal_id(), MuType_::ThreadRef));
+    pub static ref INTERNAL_TYPES: Vec<P<MuType>> = vec![
         ADDRESS_TYPE.clone(),
         UINT1_TYPE.clone(),
         UINT8_TYPE.clone(),
@@ -129,7 +97,7 @@ pub fn init_types() {
 #[derive(Debug)]
 pub struct MuType {
     pub hdr: MuEntityHeader,
-    pub v: MuType_
+    pub v: MuType_,
 }
 
 rodal_struct!(MuType { hdr, v });
@@ -148,28 +116,28 @@ impl MuType {
     pub fn new(id: MuID, v: MuType_) -> MuType {
         MuType {
             hdr: MuEntityHeader::unnamed(id),
-            v: v
+            v: v,
         }
     }
 
     pub fn is_tagref64(&self) -> bool {
         match self.v {
             MuType_::Tagref64 => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_stackref(&self) -> bool {
         match self.v {
             MuType_::StackRef => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_funcref(&self) -> bool {
         match self.v {
             MuType_::FuncRef(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -177,14 +145,14 @@ impl MuType {
     pub fn is_struct(&self) -> bool {
         match self.v {
             MuType_::Struct(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_void(&self) -> bool {
         match self.v {
             MuType_::Void => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -192,7 +160,7 @@ impl MuType {
     pub fn is_hybrid(&self) -> bool {
         match self.v {
             MuType_::Hybrid(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -200,7 +168,7 @@ impl MuType {
     pub fn is_int(&self) -> bool {
         match self.v {
             MuType_::Int(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -217,32 +185,34 @@ impl MuType {
     pub fn is_fp(&self) -> bool {
         match self.v {
             MuType_::Float | MuType_::Double => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_opaque_reference(&self) -> bool {
         match self.v {
             MuType_::FuncRef(_) | MuType_::StackRef | MuType_::ThreadRef => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_eq_comparable(&self) -> bool {
-        self.is_int() || self.is_ptr() || self.is_iref() || self.is_ref() ||
-            self.is_opaque_reference()
+        self.is_int()
+            || self.is_ptr()
+            || self.is_iref()
+            || self.is_ref()
+            || self.is_opaque_reference()
     }
 
     pub fn is_ult_comparable(&self) -> bool {
         self.is_int() || self.is_ptr() || self.is_iref()
     }
 
-
     /// is this type a float type (single-precision floating point)
     pub fn is_float(&self) -> bool {
         match self.v {
             MuType_::Float => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -250,26 +220,26 @@ impl MuType {
     pub fn is_double(&self) -> bool {
         match self.v {
             MuType_::Double => true,
-            _ => false
+            _ => false,
         }
     }
 
     /// is this type a scalar type?
     pub fn is_scalar(&self) -> bool {
         match self.v {
-            MuType_::Int(_) |
-            MuType_::Float |
-            MuType_::Double |
-            MuType_::Ref(_) |
-            MuType_::IRef(_) |
-            MuType_::WeakRef(_) |
-            MuType_::FuncRef(_) |
-            MuType_::UFuncPtr(_) |
-            MuType_::ThreadRef |
-            MuType_::StackRef |
-            MuType_::Tagref64 |
-            MuType_::UPtr(_) => true,
-            _ => false
+            MuType_::Int(_)
+            | MuType_::Float
+            | MuType_::Double
+            | MuType_::Ref(_)
+            | MuType_::IRef(_)
+            | MuType_::WeakRef(_)
+            | MuType_::FuncRef(_)
+            | MuType_::UFuncPtr(_)
+            | MuType_::ThreadRef
+            | MuType_::StackRef
+            | MuType_::Tagref64
+            | MuType_::UPtr(_) => true,
+            _ => false,
         }
     }
 
@@ -278,7 +248,7 @@ impl MuType {
     pub fn get_struct_hybrid_tag(&self) -> Option<MuName> {
         match self.v {
             MuType_::Hybrid(ref name) | MuType_::Struct(ref name) => Some(name.clone()),
-            _ => None
+            _ => None,
         }
     }
 
@@ -287,7 +257,7 @@ impl MuType {
     pub fn is_ref(&self) -> bool {
         match self.v {
             MuType_::Ref(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -295,7 +265,7 @@ impl MuType {
     pub fn is_heap_reference(&self) -> bool {
         match self.v {
             MuType_::Ref(_) | MuType_::IRef(_) | MuType_::WeakRef(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -303,7 +273,7 @@ impl MuType {
     pub fn is_iref(&self) -> bool {
         match self.v {
             MuType_::IRef(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -311,7 +281,7 @@ impl MuType {
     pub fn is_ptr(&self) -> bool {
         match self.v {
             MuType_::UPtr(_) | MuType_::UFuncPtr(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -319,7 +289,7 @@ impl MuType {
     pub fn is_aggregate(&self) -> bool {
         match self.v {
             MuType_::Struct(_) | MuType_::Hybrid(_) | MuType_::Array(_, _) => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -340,8 +310,8 @@ impl MuType {
                 let ref fix_tys = hybrid_ty.fix_tys;
                 let ref var_ty = hybrid_ty.var_ty;
 
-                var_ty.is_traced() ||
-                    fix_tys
+                var_ty.is_traced()
+                    || fix_tys
                         .into_iter()
                         .map(|ty| ty.is_traced())
                         .fold(false, |ret, this| ret || this)
@@ -356,7 +326,7 @@ impl MuType {
                     .map(|ty| ty.is_traced())
                     .fold(false, |ret, this| ret || this)
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -381,8 +351,8 @@ impl MuType {
                 let ref fix_tys = hybrid_ty.fix_tys;
                 let ref var_ty = hybrid_ty.var_ty;
 
-                var_ty.is_native_safe() &&
-                    fix_tys
+                var_ty.is_native_safe()
+                    && fix_tys
                         .into_iter()
                         .map(|ty| ty.is_native_safe())
                         .fold(true, |ret, this| ret && this)
@@ -397,7 +367,7 @@ impl MuType {
                     .map(|ty| ty.is_native_safe())
                     .fold(true, |ret, this| ret && this)
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -405,7 +375,7 @@ impl MuType {
     pub fn get_elem_ty(&self) -> Option<P<MuType>> {
         match self.v {
             MuType_::Array(ref elem_ty, _) => Some(elem_ty.clone()),
-            _ => None
+            _ => None,
         }
     }
 
@@ -413,7 +383,7 @@ impl MuType {
     pub fn get_sig(&self) -> Option<P<MuFuncSig>> {
         match self.v {
             MuType_::FuncRef(ref sig) | MuType_::UFuncPtr(ref sig) => Some(sig.clone()),
-            _ => None
+            _ => None,
         }
     }
 
@@ -433,7 +403,7 @@ impl MuType {
 
                 Some(hybrid_inner.fix_tys[index].clone())
             }
-            _ => None
+            _ => None,
         }
     }
 
@@ -446,7 +416,7 @@ impl MuType {
 
                 Some(hybrid_inner.var_ty.clone())
             }
-            _ => None
+            _ => None,
         }
     }
 
@@ -456,7 +426,7 @@ impl MuType {
         use types::MuType_::*;
         match self.v {
             Ref(ref ty) | IRef(ref ty) | WeakRef(ref ty) | UPtr(ref ty) => Some(ty.clone()),
-            _ => None
+            _ => None,
         }
     }
 
@@ -465,7 +435,7 @@ impl MuType {
     pub fn get_func_sig(&self) -> Option<P<MuFuncSig>> {
         match self.v {
             MuType_::FuncRef(ref sig) | MuType_::UFuncPtr(ref sig) => Some(sig.clone()),
-            _ => None
+            _ => None,
         }
     }
 
@@ -475,16 +445,9 @@ impl MuType {
         use types::MuType_::*;
         match self.v {
             Int(len) => Some(len),
-            Ref(_) |
-            IRef(_) |
-            WeakRef(_) |
-            UPtr(_) |
-            ThreadRef |
-            StackRef |
-            Tagref64 |
-            FuncRef(_) |
-            UFuncPtr(_) => Some(64),
-            _ => None
+            Ref(_) | IRef(_) | WeakRef(_) | UPtr(_) | ThreadRef | StackRef | Tagref64
+            | FuncRef(_) | UFuncPtr(_) => Some(64),
+            _ => None,
         }
     }
 
@@ -499,15 +462,14 @@ impl MuType {
                 let lock = HYBRID_TAG_MAP.read().unwrap();
                 format!("{} = {}", tag, lock.get(tag).unwrap())
             }
-            _ => format!("{}", self)
+            _ => format!("{}", self),
         }
     }
 
     /// prints a struct type
     pub fn print_hybrid(&self) -> String {
         match self.v {
-
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -562,13 +524,13 @@ pub enum MuType_ {
     FuncRef(P<MuFuncSig>),
 
     /// ufuncptr<@sig>
-    UFuncPtr(P<MuFuncSig>)
+    UFuncPtr(P<MuFuncSig>),
 }
 impl MuType_ {
     pub fn strong_variant(&self) -> MuType_ {
         match self {
             &MuType_::WeakRef(ref t) => MuType_::Ref(t.clone()),
-            _ => self.clone()
+            _ => self.clone(),
         }
     }
 }
@@ -601,7 +563,7 @@ impl fmt::Display for MuType_ {
             &MuType_::FuncRef(ref sig) => write!(f, "funcref<{}>", sig),
             &MuType_::UFuncPtr(ref sig) => write!(f, "ufuncptr<{}>", sig),
             &MuType_::Struct(ref tag) => write!(f, "{}", tag),
-            &MuType_::Hybrid(ref tag) => write!(f, "{}", tag)
+            &MuType_::Hybrid(ref tag) => write!(f, "{}", tag),
         }
     }
 }
@@ -626,10 +588,10 @@ lazy_static! {
         };
 }
 
-rodal_struct!(StructType_{tys});
+rodal_struct!(StructType_ { tys });
 #[derive(PartialEq, Debug)]
 pub struct StructType_ {
-    tys: Vec<P<MuType>>
+    tys: Vec<P<MuType>>,
 }
 
 impl fmt::Display for StructType_ {
@@ -661,18 +623,18 @@ impl StructType_ {
     }
 }
 
-rodal_struct!(HybridType_{fix_tys, var_ty});
+rodal_struct!(HybridType_ { fix_tys, var_ty });
 #[derive(PartialEq, Debug)]
 pub struct HybridType_ {
     fix_tys: Vec<P<MuType>>,
-    var_ty: P<MuType>
+    var_ty: P<MuType>,
 }
 
 impl HybridType_ {
     pub fn new(fix_tys: Vec<P<MuType>>, var_ty: P<MuType>) -> HybridType_ {
         HybridType_ {
             fix_tys: fix_tys,
-            var_ty: var_ty
+            var_ty: var_ty,
         }
     }
 
@@ -776,7 +738,7 @@ impl MuType_ {
                 struct_ty_.tys.clear();
                 struct_ty_.tys.append(&mut list);
             }
-            None => panic!("call mustruct_empty() to create an empty struct before mustruct_put()")
+            None => panic!("call mustruct_empty() to create an empty struct before mustruct_put()"),
         }
     }
     /// creates a Mu struct with specified field types
@@ -788,8 +750,10 @@ impl MuType_ {
         match STRUCT_TAG_MAP.read().unwrap().get(&tag) {
             Some(old_struct_ty_) => {
                 if struct_ty_ != *old_struct_ty_ {
-                    panic!("trying to insert {} as {}, while the old struct is defined as {}",
-                            struct_ty_, tag, old_struct_ty_)
+                    panic!(
+                        "trying to insert {} as {}, while the old struct is defined as {}",
+                        struct_ty_, tag, old_struct_ty_
+                    )
                 }
             }
             None => {}
@@ -808,7 +772,7 @@ impl MuType_ {
     pub fn hybrid_empty(tag: HybridTag) -> MuType_ {
         let hybrid_ty_ = HybridType_ {
             fix_tys: vec![],
-            var_ty: VOID_TYPE.clone()
+            var_ty: VOID_TYPE.clone(),
         };
         HYBRID_TAG_MAP
             .write()
@@ -832,22 +796,23 @@ impl MuType_ {
 
                 hybrid_ty_.var_ty = var_ty;
             }
-            None => panic!("call hybrid_empty() to create an empty struct before hybrid_put()")
+            None => panic!("call hybrid_empty() to create an empty struct before hybrid_put()"),
         }
     }
     /// creates a Mu hybrid with specified fix part and var part types
     pub fn hybrid(tag: HybridTag, fix_tys: Vec<P<MuType>>, var_ty: P<MuType>) -> MuType_ {
         let hybrid_ty_ = HybridType_ {
             fix_tys: fix_tys,
-            var_ty: var_ty
+            var_ty: var_ty,
         };
-
 
         match HYBRID_TAG_MAP.read().unwrap().get(&tag) {
             Some(old_hybrid_ty_) => {
                 if hybrid_ty_ != *old_hybrid_ty_ {
-                    panic!("trying to insert {} as {}, while the old hybrid is defined as {}",
-                           hybrid_ty_, tag, old_hybrid_ty_);
+                    panic!(
+                        "trying to insert {} as {}, while the old hybrid is defined as {}",
+                        hybrid_ty_, tag, old_hybrid_ty_
+                    );
                 }
             }
             None => {}
@@ -867,7 +832,7 @@ impl MuType_ {
 pub struct MuFuncSig {
     pub hdr: MuEntityHeader,
     pub ret_tys: Vec<P<MuType>>,
-    pub arg_tys: Vec<P<MuType>>
+    pub arg_tys: Vec<P<MuType>>,
 }
 
 impl PartialEq for MuFuncSig {
@@ -875,12 +840,20 @@ impl PartialEq for MuFuncSig {
         self.ret_tys == other.ret_tys && self.arg_tys == other.arg_tys
     }
 }
-rodal_struct!(MuFuncSig{hdr, ret_tys, arg_tys});
+rodal_struct!(MuFuncSig {
+    hdr,
+    ret_tys,
+    arg_tys
+});
 
 impl fmt::Display for MuFuncSig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({})->({})",
-            vec_utils::as_str_sp(&self.arg_tys), vec_utils::as_str_sp(&self.ret_tys))
+        write!(
+            f,
+            "({})->({})",
+            vec_utils::as_str_sp(&self.arg_tys),
+            vec_utils::as_str_sp(&self.ret_tys)
+        )
     }
 }
 

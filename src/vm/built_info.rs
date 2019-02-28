@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 extern crate built;
 
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 include!(concat!(env!("OUT_DIR"), "/built.rs"));
 
 use std::ffi::CString;
 use std::string::String;
 
-#[cfg(not(feature = "sel4-rumprun-target-side"))]
 lazy_static! {
-    pub static ref ZEBU_VERSION_STR : String = {
+    pub static ref ZEBU_VERSION_STR: String = {
         let git = match GIT_VERSION {
             Some(str) => str,
-            None => "no git version found"
+            None => "no git version found",
         };
 
         let built_time = built::util::strptime(&BUILT_TIME_UTC);
 
         format!("Zebu {} ({}, {})", PKG_VERSION, git, built_time.ctime())
     };
-
-    pub static ref ZEBU_VERSION_C_STR : CString = CString::new(ZEBU_VERSION_STR.clone()).unwrap();
-}
-
-#[cfg(feature = "sel4-rumprun-target-side")]
-lazy_static! {
-    pub static ref ZEBU_VERSION_STR : String = { "Not Available in sel4-rumprun".to_string() };
-    pub static ref ZEBU_VERSION_C_STR : CString = CString::new(ZEBU_VERSION_STR.clone()).unwrap();
+    pub static ref ZEBU_VERSION_C_STR: CString = CString::new(ZEBU_VERSION_STR.clone()).unwrap();
 }

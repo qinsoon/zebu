@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::Address;
-use std::ops::Deref;
-use std::ops::DerefMut;
 use std::fmt;
 use std::mem::transmute;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use utils::Address;
 
 #[repr(C)]
 pub struct Raw<T: RawMemoryMetadata> {
-    inner: *mut T
+    inner: *mut T,
 }
 
 impl<T: RawMemoryMetadata> Raw<T> {
@@ -31,7 +31,7 @@ impl<T: RawMemoryMetadata> Raw<T> {
     pub unsafe fn from_addr(addr: Address) -> Raw<T> {
         debug_assert!(!addr.is_zero());
         Raw {
-            inner: addr.to_ptr_mut()
+            inner: addr.to_ptr_mut(),
         }
     }
     pub fn addr(&self) -> Address {

@@ -14,17 +14,16 @@
 
 #![allow(dead_code)]
 
-use compiler::CompilerPass;
 use ast::ir::*;
-use vm::VM;
+use compiler::CompilerPass;
 use std::any::Any;
+use vm::VM;
 
-use std::path;
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
+use std::path;
 use vm::uir_output::create_emit_directory;
 pub const EMIT_MUIR: bool = true;
-
 
 fn create_emit_file(name: String, vm: &VM) -> File {
     let mut file_path = path::PathBuf::new();
@@ -32,27 +31,25 @@ fn create_emit_file(name: String, vm: &VM) -> File {
     file_path.push(name);
 
     match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldn't create emit file {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldn't create emit file {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     }
 }
 
 pub struct UIRGen {
     name: &'static str,
-    suffix: &'static str
+    suffix: &'static str,
 }
 
 impl UIRGen {
     pub fn new(suffix: &'static str) -> UIRGen {
         UIRGen {
             name: "UIRGen",
-            suffix: suffix
+            suffix: suffix,
         }
     }
 }
@@ -69,14 +66,12 @@ fn emit_uir(suffix: &str, func_ver: &MuFunctionVersion, vm: &VM) {
     file_path.push((*func_ver_name).clone() + suffix + ".uir");
 
     let mut file = match File::create(file_path.as_path()) {
-        Err(why) => {
-            panic!(
-                "couldnt create muir dot {}: {}",
-                file_path.to_str().unwrap(),
-                why
-            )
-        }
-        Ok(file) => file
+        Err(why) => panic!(
+            "couldnt create muir dot {}: {}",
+            file_path.to_str().unwrap(),
+            why
+        ),
+        Ok(file) => file,
     };
     let func_name = {
         let funcs = vm.funcs().read().unwrap();
@@ -95,7 +90,8 @@ fn emit_uir_inner(file: &mut File, func_name: MuName, func_ver: &MuFunctionVersi
         func_name,
         func_ver.sig,
         func_ver.hdr.abbreviate_name()
-    ).unwrap();
+    )
+    .unwrap();
     writeln!(file, "{{").unwrap();
     // every basic block
     for (_, block) in f_content.blocks.iter() {

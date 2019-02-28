@@ -14,19 +14,19 @@
 
 extern crate hprof;
 
-use compiler::machine_code::CompiledFunction;
 use ast::ir::*;
 use compiler::backend;
-use utils::LinkedHashSet;
-use utils::LinkedHashMap;
+use compiler::machine_code::CompiledFunction;
 use std::fmt;
+use utils::LinkedHashMap;
+use utils::LinkedHashSet;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum NodeType {
     Def,
     Use,
     Copy,
-    Machine
+    Machine,
 }
 
 /// GraphNode represents a node in the interference graph.
@@ -41,7 +41,7 @@ pub struct Node {
     /// cost to spill this temp
     spill_cost: f32,
     /// cost to freeze this temp
-    freeze_cost: f32
+    freeze_cost: f32,
 }
 
 impl fmt::Debug for Node {
@@ -49,10 +49,7 @@ impl fmt::Debug for Node {
         write!(
             f,
             "Node({}): color={:?}, group={:?}, spill_cost={}",
-            self.temp,
-            self.color,
-            self.group,
-            self.spill_cost
+            self.temp, self.color, self.group, self.spill_cost
         )
     }
 }
@@ -62,7 +59,7 @@ impl fmt::Debug for Node {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move {
     pub from: MuID,
-    pub to: MuID
+    pub to: MuID,
 }
 
 impl fmt::Debug for Move {
@@ -113,7 +110,7 @@ pub struct InterferenceGraph {
     adj_set: LinkedHashSet<(MuID, MuID)>,
     adj_list: LinkedHashMap<MuID, LinkedHashSet<MuID>>,
     degree: LinkedHashMap<MuID, usize>,
-    moves: LinkedHashSet<Move>
+    moves: LinkedHashSet<Move>,
 }
 
 impl InterferenceGraph {
@@ -124,7 +121,7 @@ impl InterferenceGraph {
             adj_list: LinkedHashMap::new(),
             degree: LinkedHashMap::new(),
             nodes: LinkedHashMap::new(),
-            moves: LinkedHashSet::new()
+            moves: LinkedHashSet::new(),
         }
     }
 
@@ -135,7 +132,7 @@ impl InterferenceGraph {
         reg_id: MuID,
         ty: NodeType,
         loop_depth: usize,
-        context: &FunctionContext
+        context: &FunctionContext,
     ) -> MuID {
         let entry = context.get_value(reg_id).unwrap();
 
@@ -146,7 +143,7 @@ impl InterferenceGraph {
                 color: None,
                 group: backend::RegGroup::get_from_ty(entry.ty()),
                 spill_cost: 0.0f32,
-                freeze_cost: 0f32
+                freeze_cost: 0f32,
             };
 
             self.nodes.insert(reg_id, node);
@@ -173,7 +170,7 @@ impl InterferenceGraph {
             NodeType::Machine => 0f32,
             NodeType::Def => DEF_WEIGHT * (10f32.powi(loop_depth)),
             NodeType::Use => USE_WEIGHT * (10f32.powi(loop_depth)),
-            NodeType::Copy => COPY_WEIGHT * (10f32.powi(loop_depth))
+            NodeType::Copy => COPY_WEIGHT * (10f32.powi(loop_depth)),
         }
     }
 
@@ -367,7 +364,7 @@ const TRACE_LIVENESS: bool = false;
 /// - CGO'06, Figure 4
 pub fn build_interference_graph_chaitin_briggs(
     cf: &mut CompiledFunction,
-    func: &MuFunctionVersion
+    func: &MuFunctionVersion,
 ) -> InterferenceGraph {
     use compiler::backend::reg_alloc::graph_coloring::liveness::NodeType::*;
 
@@ -395,7 +392,7 @@ pub fn build_interference_graph_chaitin_briggs(
         debug!("build graph node for block {}", block);
         let loop_depth: usize = match cf.loop_analysis.as_ref().unwrap().loop_depth.get(&block) {
             Some(depth) => *depth,
-            None => 0
+            None => 0,
         };
         debug!("loop depth = {}", loop_depth);
         for i in mc.get_block_range(&block).unwrap() {
@@ -433,7 +430,7 @@ pub fn build_interference_graph_chaitin_briggs(
         let mut current_live =
             LinkedHashSet::from_vec(match cf.mc().get_ir_block_liveout(&block) {
                 Some(liveout) => liveout.to_vec(),
-                None => panic!("cannot find liveout for block {}", block)
+                None => panic!("cannot find liveout for block {}", block),
             });
         let print_set = |set: &LinkedHashSet<MuID>| {
             let mut s = String::new();
@@ -590,7 +587,7 @@ struct CFGBlockNode {
     pred: Vec<String>,
     succ: Vec<String>,
     uses: Vec<MuID>,
-    defs: Vec<MuID>
+    defs: Vec<MuID>,
 }
 
 /// builds a LinkedHashMap from basic block names to CFGBlockNode
@@ -613,20 +610,18 @@ fn build_cfg_nodes(cf: &mut CompiledFunction) -> LinkedHashMap<MuName, CFGBlockN
         for block in all_blocks.iter() {
             let range = match mc.get_block_range(block) {
                 Some(range) => range,
-                None => panic!("cannot find range for block {}", block)
+                None => panic!("cannot find range for block {}", block),
             };
             // start inst
             let first_inst = range.start;
             // last inst (we need to skip symbols)
             let last_inst = match mc.get_last_inst(range.end) {
                 Some(last) => last,
-                None => {
-                    panic!(
-                        "cannot find last instruction in block {}, \
-                         this block contains no instruction?",
-                        block
-                    )
-                }
+                None => panic!(
+                    "cannot find last instruction in block {}, \
+                     this block contains no instruction?",
+                    block
+                ),
             };
             trace_if!(
                 TRACE_LIVENESS,
@@ -715,7 +710,7 @@ fn build_cfg_nodes(cf: &mut CompiledFunction) -> LinkedHashMap<MuName, CFGBlockN
             pred: preds,
             succ: succs,
             uses: livein,
-            defs: defs
+            defs: defs,
         };
 
         trace_if!(TRACE_LIVENESS, "as CFGNode {:?}", node);
@@ -729,7 +724,7 @@ fn build_cfg_nodes(cf: &mut CompiledFunction) -> LinkedHashMap<MuName, CFGBlockN
 fn global_liveness_analysis(
     blocks: LinkedHashMap<MuName, CFGBlockNode>,
     cf: &mut CompiledFunction,
-    func: &MuFunctionVersion
+    func: &MuFunctionVersion,
 ) {
     info!("---global liveness analysis---");
     info!("{} blocks", blocks.len());
@@ -798,8 +793,8 @@ fn global_liveness_analysis(
             }
 
             // is in/out changed in this iteration?
-            let n_changed = !in_set_old.equals(livein.get(node).unwrap()) ||
-                !out_set_old.equals(liveout.get(node).unwrap());
+            let n_changed = !in_set_old.equals(livein.get(node).unwrap())
+                || !out_set_old.equals(liveout.get(node).unwrap());
 
             if TRACE_LIVENESS {
                 trace!("block {}", node);

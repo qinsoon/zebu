@@ -14,18 +14,18 @@
 
 extern crate libloading;
 
-use mu::ast::types::*;
-use mu::ast::ir::*;
-use mu::ast::ptr::*;
 use mu::ast::inst::*;
+use mu::ast::ir::*;
 use mu::ast::op::*;
-use mu::vm::*;
+use mu::ast::ptr::*;
+use mu::ast::types::*;
 use mu::compiler::*;
+use mu::vm::*;
 
-use std::sync::Arc;
 use mu::linkutils;
 use mu::linkutils::aot;
 use mu::utils::LinkedHashMap;
+use std::sync::Arc;
 
 // NOTE: aarch64 has 2 more parameter registers than x86-64
 // so it needs different test cases for stack arguments
@@ -58,7 +58,7 @@ fn test_ccall_exit() {
     let executable = aot::link_primordial(
         vec![Arc::new("ccall_exit".to_string())],
         "ccall_exit_test",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -1293,29 +1293,29 @@ fn store_funcref() -> VM {
     */
     ssa!((vm, current_tester_v1) <int1> cmp_res);
     inst!((vm, current_tester_v1) blk_entry_cmp:
-            cmp_res = CMPOP (CmpOp::EQ) result expected_result_const_local
-        );
+        cmp_res = CMPOP (CmpOp::EQ) result expected_result_const_local
+    );
 
     ssa!((vm, current_tester_v1) <int32> blk_entry_ret);
     inst!((vm, current_tester_v1) blk_entry_inst_select:
-            blk_entry_ret = SELECT cmp_res int64_pass_local int64_fail_local
-        );
+        blk_entry_ret = SELECT cmp_res int64_pass_local int64_fail_local
+    );
 
     inst!((vm, current_tester_v1) blk_entry_inst_ret:
-             SET_RETVAL blk_entry_ret
-        );
+         SET_RETVAL blk_entry_ret
+    );
     inst!((vm, current_tester_v1) blk_entry_inst_exit:
-            THREADEXIT
-        );
+        THREADEXIT
+    );
 
     define_block!((vm, current_tester_v1) blk_entry() {
-             blk_entry_alloc,
-             blk_entry_call,
-             blk_entry_cmp,
-             blk_entry_inst_select,
-             blk_entry_inst_ret,
-             blk_entry_inst_exit
-        });
+         blk_entry_alloc,
+         blk_entry_call,
+         blk_entry_cmp,
+         blk_entry_inst_select,
+         blk_entry_inst_ret,
+         blk_entry_inst_exit
+    });
 
     define_func_ver!((vm) current_tester_v1 (entry: blk_entry) {
             blk_entry

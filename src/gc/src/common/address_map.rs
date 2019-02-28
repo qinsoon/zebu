@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use std::mem;
-use utils::POINTER_SIZE;
-use utils::LOG_POINTER_SIZE;
-use utils::Address;
 use utils::mem::malloc_zero;
 use utils::mem::memsec::free;
+use utils::Address;
+use utils::LOG_POINTER_SIZE;
+use utils::POINTER_SIZE;
 
 #[derive(Clone)]
 pub struct AddressMap<T: Copy> {
@@ -25,12 +25,12 @@ pub struct AddressMap<T: Copy> {
     end: Address,
 
     pub ptr: *mut T,
-    len: usize
+    len: usize,
 }
 
 impl<T> AddressMap<T>
 where
-    T: Copy
+    T: Copy,
 {
     pub fn new(start: Address, end: Address) -> AddressMap<T> {
         let len = (end - start) >> LOG_POINTER_SIZE;
@@ -40,7 +40,7 @@ where
             start: start,
             end: end,
             ptr: ptr,
-            len: len
+            len: len,
         }
     }
 
@@ -68,7 +68,7 @@ where
 
 impl<T> Drop for AddressMap<T>
 where
-    T: Copy
+    T: Copy,
 {
     fn drop(&mut self) {
         unsafe { free(self.ptr) }

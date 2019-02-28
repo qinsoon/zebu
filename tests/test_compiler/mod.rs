@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod test_pre_instsel;
-mod test_instsel;
-mod test_regalloc;
-mod test_global;
-mod test_compiler;
 mod test_alloc;
-mod test_exception;
-mod test_thread;
-mod test_floatingpoint;
-mod test_int;
 mod test_binop;
-mod test_controlflow;
 mod test_call;
-mod test_mem_inst;
-mod test_inline;
+mod test_compiler;
+mod test_controlflow;
 mod test_convop;
+mod test_exception;
+mod test_floatingpoint;
+mod test_global;
+mod test_inline;
+mod test_instsel;
+mod test_int;
 mod test_int128;
+mod test_mem_inst;
 mod test_misc;
 mod test_opt;
+mod test_pre_instsel;
+mod test_regalloc;
+mod test_thread;

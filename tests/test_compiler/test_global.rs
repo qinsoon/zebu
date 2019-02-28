@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate mu;
-extern crate log;
 extern crate libloading;
+extern crate log;
+extern crate mu;
 
-use test_ir::test_ir::global_access;
-use test_compiler::test_call::gen_ccall_exit;
-use self::mu::compiler::*;
-use self::mu::vm::VM;
-use self::mu::runtime::thread::MuThread;
-use self::mu::ast::types::*;
-use self::mu::ast::ir::*;
 use self::mu::ast::inst::*;
+use self::mu::ast::ir::*;
 use self::mu::ast::op::*;
-use utils::Address;
-use utils::LinkedHashMap;
+use self::mu::ast::types::*;
+use self::mu::compiler::*;
+use self::mu::runtime::thread::MuThread;
+use self::mu::vm::VM;
+use mu::linkutils;
 use mu::linkutils::aot;
 use mu::vm::handle;
-use mu::linkutils;
+use test_compiler::test_call::gen_ccall_exit;
+use test_ir::test_ir::global_access;
+use utils::Address;
+use utils::LinkedHashMap;
 
 use std::sync::Arc;
 
@@ -96,8 +96,7 @@ fn test_set_global_by_api() {
 
         debug!(
             "write {:?} to location {:?}",
-            uint64_10_handle,
-            global_handle
+            uint64_10_handle, global_handle
         );
         vm.handle_store(MemoryOrder::Relaxed, &global_handle, &uint64_10_handle);
     }
@@ -185,7 +184,10 @@ fn test_get_global_in_dylib() {
 
         let uint64_10_handle = vm.handle_from_uint64(10, 64);
 
-        debug!("write {:?} to location {:?}", uint64_10_handle, global_handle);
+        debug!(
+            "write {:?} to location {:?}",
+            uint64_10_handle, global_handle
+        );
         vm.handle_store(MemoryOrder::Relaxed, &global_handle, &uint64_10_handle);
     }
 
@@ -301,7 +303,7 @@ fn test_persist_linked_list() {
         vm.handle_store(
             MemoryOrder::Relaxed,
             &global_handle,
-            last_node.as_ref().unwrap()
+            last_node.as_ref().unwrap(),
         );
     }
 
@@ -313,7 +315,7 @@ fn test_persist_linked_list() {
     let executable = aot::link_primordial(
         vec![Mu("persist_linked_list")],
         "persist_linked_list_test",
-        &vm
+        &vm,
     );
     let output = linkutils::exec_path_nocheck(executable);
 
@@ -733,7 +735,10 @@ fn test_persist_funcref() {
 
         let func_ret42_handle = vm.handle_from_func(func_ret42_id);
 
-        debug!("write {:?} to location {:?}", func_ret42_handle, global_handle);
+        debug!(
+            "write {:?} to location {:?}",
+            func_ret42_handle, global_handle
+        );
         vm.handle_store(MemoryOrder::Relaxed, &global_handle, &func_ret42_handle);
     }
 
@@ -749,7 +754,7 @@ fn test_persist_funcref() {
         vec![], // sym fields/strings
         vec![],
         vec![], // reloc fields/strings
-        "test_persist_funcref".to_string()
+        "test_persist_funcref".to_string(),
     );
 
     // link
