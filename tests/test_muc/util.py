@@ -20,7 +20,7 @@ emit = os.environ.get('MU_EMIT_DIR', 'emit'); #type: str
 libext = '.dylib' if sys.platform.startswith('darwin') else \
          '.so'    if sys.platform.startswith('linux') else sys.exit("Unsupported platform"); #type: str
 libmu = os.path.join(os.environ.get('MU_ZEBU', os.path.dirname(os.path.dirname(os.getcwd()))),
-                     'target', os.environ.get('ZEBU_BUILD', 'debug'),
+                     'target', os.environ.get('ZEBU_BUILD', 'debug'), 'deps',
                      "libmu" + libext); #type: str
 prelude = """
         /*--------------------------------------------------------*/

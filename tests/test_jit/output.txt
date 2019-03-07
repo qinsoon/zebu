@@ -1,0 +1,38 @@
+[1m============================= test session starts ==============================[0m
+platform linux2 -- Python 2.7.15rc1, pytest-2.9.2, py-1.4.29, pluggy-0.3.1 -- /usr/bin/python2
+cachedir: .cache
+rootdir: /home/javadamiri/myFiles/Src/mu-impl-fast/tests/test_jit, inifile: 
+[1mcollecting ... [0mcollected 30 items
+
+test_rpython.py::test_throw <- util.py [32mPASSED[0m
+test_rpython.py::test_find_min <- util.py [32mPASSED[0m
+test_rpython.py::test_exception_stack_unwind <- util.py [32mPASSED[0m
+test_rpython.py::test_partition_in_quicksort <- util.py [32mPASSED[0m
+test_rpython.py::test_dtoa <- util.py [32mPASSED[0m
+test_rpython.py::test_rpytarget_print_argv <- util.py [32mPASSED[0m
+test_rpython.py::test_rpytarget_richards_measure_time <- util.py [32mPASSED[0m
+test_rpython.py::test_float <- util.py [32mPASSED[0m
+test_rpython.py::test_add <- util.py [32mPASSED[0m
+test_rpython.py::test_linkedlist_reversal <- util.py [32mPASSED[0m
+test_rpython.py::test_quicksort <- util.py [32mPASSED[0m
+test_rpython.py::test_open_file_as_stream <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_main <- util.py [32mPASSED[0m
+test_rpython.py::test_nbody <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_time_diff <- util.py [32mPASSED[0m
+test_rpython.py::test_new_cmpeq <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_print_number <- util.py [32mPASSED[0m
+test_rpython.py::test_rpytarget_richards0 <- util.py [32mPASSED[0m
+test_rpython.py::test_rpytarget_sha1sum <- util.py [32mPASSED[0m
+test_rpython.py::test_new <- util.py [32mPASSED[0m
+test_rpython.py::test_vec3prod <- util.py [32mPASSED[0m
+test_rpython.py::test_make_boot_image_simple <- util.py [32mPASSED[0m
+test_rpython.py::test_threadtran_fib <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_rethrow <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_helloworld <- util.py [32mPASSED[0m
+test_rpython.py::test_arraysum <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_print_time <- util.py [32mPASSED[0m
+test_rpython.py::test_rpytarget_testdicts <- util.py [32mPASSED[0m
+test_rpython.py::test_rpython_print_fmt <- util.py [32mPASSED[0m
+test_rpython.py::test_linked_list <- util.py [32mPASSED[0m
+
+[32m[1m========================= 30 passed in 190.17 seconds ==========================[0m
