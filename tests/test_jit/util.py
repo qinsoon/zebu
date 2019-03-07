@@ -36,7 +36,7 @@ elif sys.platform.startswith('linux'):
 else:
     libext = '.dll'
 
-libmu_build = os.environ.get('ZEBU_BUILD', 'debug')
+libmu_build = os.environ.get('ZEBU_BUILD', 'debug') + '/deps'
 
 libmu_dir_path       = proj_dir.join('target', libmu_build)
 libmu_dylib_path     = proj_dir.join('target', libmu_build, 'libmu' + libext)

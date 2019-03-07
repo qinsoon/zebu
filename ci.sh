@@ -18,7 +18,7 @@ export MU_LOG_LEVEL=none
 export RUST_TEST_THREADS=1
 export RUST_BACKTRACE=0
 export PYTHONPATH="$MU_ZEBU/tests/test_jit/mu-client-pypy/:$MU_ZEBU/tests/test_jit/RPySOM/src"
-export LD_LIBRARY_PATH="$MU_ZEBU/target/$ZEBU_BUILD:$MU_ZEBU/tests/test_jit/:$MU_ZEBU/tests/test_jit/emit/:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$MU_ZEBU/target/$ZEBU_BUILD/deps/:$MU_ZEBU/tests/test_jit/:$MU_ZEBU/tests/test_jit/emit/:$LD_LIBRARY_PATH"
 export ZEBU_BUILD=release
 
 rm -rf $MU_ZEBU/emit

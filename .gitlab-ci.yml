@@ -10,7 +10,7 @@ before_script:
   - export CARGO_HOME=.cargo
   - export CC=clang
   - export RUST_TEST_THREADS=1
-  - export LD_LIBRARY_PATH=$MU_ZEBU/target/$ZEBU_BUILD:$LD_LIBRARY_PATH
+  - export LD_LIBRARY_PATH=$MU_ZEBU/target/$ZEBU_BUILD/deps/:$LD_LIBRARY_PATH
   - source /home/gitlab-runner/ci/bin/activate
 
 build:
@@ -52,7 +52,7 @@ test:cargo:runtime:
   git clone https://gitlab.anu.edu.au/mu/mu-tool-compiler
   cd mu-tool-compiler
   mkdir lib
-  ln -s $MU_ZEBU/target/release/libmu.so lib/
+  ln -s $MU_ZEBU/target/release/deps/libmu.so lib/
   make
   cd ..
 
