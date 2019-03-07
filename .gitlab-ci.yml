@@ -16,7 +16,6 @@ before_script:
 build:
   stage: build
   script:
-    - pytest --version
     - python --version
     - python2 --version
     - rustup show
