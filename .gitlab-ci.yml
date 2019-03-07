@@ -9,6 +9,7 @@ before_script:
   - export ZEBU_BUILD=release
   - export CARGO_HOME=.cargo
   - export CC=clang
+  - export CXX=clang++
   - export RUST_TEST_THREADS=1
   - export LD_LIBRARY_PATH=$MU_ZEBU/target/$ZEBU_BUILD/deps/:$LD_LIBRARY_PATH
   - source /home/gitlab-runner/ci/bin/activate
@@ -16,6 +17,8 @@ before_script:
 build:
   stage: build
   script:
+    - python --version
+    - python2 --version
     - rustup show
     - rustup run 1.30.1-x86_64-unknown-linux-gnu rustc --version
     - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo clean
