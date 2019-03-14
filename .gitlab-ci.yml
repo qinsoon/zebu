@@ -54,8 +54,8 @@ test:cargo:runtime:
   cd tests/test_muc
   git clone https://gitlab.anu.edu.au/mu/mu-tool-compiler
   cd mu-tool-compiler
-  export ANTLR_HOME=/home/gitlab-runner/antlr4/runtime/Cpp/run/
-  make
+  export ANTLR_HOME=/home/gitlab-runner/antlr4/runtime/Cpp/run
+  make static
   cd ..
 
 testmuc:test_simple:
