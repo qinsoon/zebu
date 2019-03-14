@@ -54,8 +54,7 @@ test:cargo:runtime:
   cd tests/test_muc
   git clone https://gitlab.anu.edu.au/mu/mu-tool-compiler
   cd mu-tool-compiler
-  mkdir lib
-  ln -s $MU_ZEBU/target/release/deps/libmu.so lib/
+  export ANTLR_HOME=/home/gitlab-runner/antlr4/runtime/Cpp/run/
   make
   cd ..
 
