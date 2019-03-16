@@ -57,7 +57,7 @@ test:cargo:runtime:
   export ANTLR_HOME=/home/gitlab-runner/antlr4/runtime/Cpp/run
   mkdir lib
   cp -r $ANTLR_HOME/usr/local/lib/* $PWD/lib/
-  cp -r $ZEBU_MU/target/release/deps/* $PWD/lib/
+  cp -r $MU_ZEBU/target/release/deps/* $PWD/lib/
   export CC=gcc
   export CXX=g++
   make
