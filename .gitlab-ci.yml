@@ -55,7 +55,8 @@ test:cargo:runtime:
   git clone https://gitlab.anu.edu.au/mu/mu-tool-compiler
   cd mu-tool-compiler
   export ANTLR_HOME=/home/gitlab-runner/antlr4/runtime/Cpp/run
-  cp -r $ANTLR_HOME/usr/local/lib/* ./lib/
+  mkdir lib
+  cp -r $ANTLR_HOME/usr/local/lib/* $PWD/lib/
   export CC=gcc
   export CXX=g++
   make
