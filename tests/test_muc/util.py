@@ -55,7 +55,11 @@ def execute_muc(bundle, name, primordial=None): # type: (str, str, Optional[str]
         + (["-f", primordial] if primordial is not None else [])
         +  ["/dev/stdin", get_output_file(name)],
         stdin = subprocess.PIPE); #type: subprocess.Popen
-    muc_proc.communicate(bundle); # Send the bundle to muc
+    stdoutdata, stderrdata = muc_proc.communicate(bundle); # Send the bundle to muc
+    print("errors:\n\n")
+    print(stderrdata);
+    print("outputs:\n\n")
+    print(stdoutdata);
     assert (muc_proc.returncode == 0); # Check that muc worked
 
 def compile_bundle(bundle, name, main = None): # type: (str, str, Optional[str]) -> None
