@@ -38,8 +38,8 @@ build:
   mkdir lib
   cp -r $ANTLR_HOME/usr/local/lib/* $PWD/lib/
   cp -r $MU_ZEBU/target/release/deps/* $PWD/lib/
-  export CC=gcc
-  export CXX=g++
+  export CC=clang
+  export CXX=clang++
   make
   cd ..
 
