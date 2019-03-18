@@ -29,10 +29,15 @@ are not compliant to Mu spec.
 ## Building
 
 You will need:
-* rust version 1.20 (f3d6973f4 2017-08-27)
+* rust version 1.28.0 or newer (2018-08-02)
 * clang 4.0+
 * cmake 3.8+ (we do not depend on cmake, but some Rust crates use it)
 * internet connection (as Rust will download dependencies)
+
+We have tested these specific versions:
+* rust `stable-2018-11-08` and `nightly-2019-02-15`
+* clang `6.0.0`
+* cmake `3.10.2`
 
 To build Zebu with release build,
 ```
@@ -97,6 +102,7 @@ Running pytest (you will need Python 2.7 with pytest module)
   export SPAWN_PROC=1
   python2 -m pytest test*.py -v
 ```
+* We only tested python `2.7.15-rc1` successfully.
 
 ## Using Zebu for your language implementation
 

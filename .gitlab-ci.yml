@@ -17,10 +17,6 @@ before_script:
 build:
   stage: build
   script:
-    - python --version
-    - python2 --version
-    - rustup show
-    - rustup run 1.30.1-x86_64-unknown-linux-gnu rustc --version
     - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo clean
     - time rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test -j6 --release --no-run --color=always
   artifacts:
@@ -68,46 +64,39 @@ testmuc:test_simple:
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_simple.py -v
-  allow_failure: true
 
 testmuc:test_swapstack:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_thread_and_stack.py -v
-  allow_failure: true
 
 testmuc:test_cmp:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_cmp.py -v
-  allow_failure: true
 
 testmuc:test_binop:
   stage: test
   script:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_binop.py -v
-  allow_failure: true
 
 testjit:milestones:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_milestones.py -v --color=yes
-  allow_failure: true
 
 testjit:binops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_binops.py -v --color=yes
-  allow_failure: true
 
 testjit:cmpops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_cmpops.py -v --color=yes
-  allow_failure: true
 
 testjit:controlflow:
   stage: test
@@ -116,37 +105,31 @@ testjit:controlflow:
     # as a C source file is expected in a relative path to current working directory
     - cd tests/test_jit
     - RUST_BACKTRACE=1 pytest test_controlflow.py -v --color=yes
-  allow_failure: true
 
 testjit:convops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_convops.py -v --color=yes
-  allow_failure: true
 
 testjit:double:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_double.py -v --color=yes
-  allow_failure: true
 
 testjit:memops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_memops.py -v --color=yes
-  allow_failure: true
 
 testjit:milestones:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_milestones.py -v --color=yes
-  allow_failure: true
 
 testjit:otherops:
   stage: test
   script:
     - RUST_BACKTRACE=1 pytest tests/test_jit/test_otherops.py -v --color=yes
-  allow_failure: true
 
 testjit:rpython:
   stage: test
@@ -158,7 +141,6 @@ testjit:rpython:
     - git apply pypy.patch
     - cd $CI_PROJECT_DIR/tests/test_jit
     - MU_LOG_LEVEL=info LD_LIBRARY_PATH=./emit:$LD_LIBRARY_PATH RUST_BACKTRACE=1 PYTHONPATH=mu-client-pypy pytest test_rpython*.py -v --color=yes
-  allow_failure: true
 
 testjit:som:
   stage: test
@@ -173,7 +155,6 @@ testjit:som:
     - git apply pypy.patch
     - cd $CI_PROJECT_DIR/tests/test_jit
     - MU_LOG_LEVEL=info LD_LIBRARY_PATH=./emit:$LD_LIBRARY_PATH RUST_BACKTRACE=1 PYTHONPATH=mu-client-pypy:RPySOM/src RPYSOM=RPySOM pytest test_som.py -v --color=yes
-  allow_failure: true
 
 mubench:
   stage: mubench
