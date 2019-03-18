@@ -54,7 +54,9 @@ def execute_muc(bundle, name, primordial=None): # type: (str, str, Optional[str]
     muc_proc = subprocess.Popen([muc, "-r"]
         + (["-f", primordial] if primordial is not None else [])
         +  ["/dev/stdin", get_output_file(name)],
-        stdin = subprocess.PIPE); #type: subprocess.Popen
+        stdin = subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE); #type: subprocess.Popen
     stdoutdata, stderrdata = muc_proc.communicate(bundle); # Send the bundle to muc
     print("errors:\n\n")
     print(stderrdata);
