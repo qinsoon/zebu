@@ -29,26 +29,6 @@ build:
       - target/release/deps/libmu.a
       - target/release/deps/lib-*
 
-test:cargo:api:
-  stage: test
-  script:
-    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_api --release 2> /dev/null
-
-test:cargo:ir:
-  stage: test
-  script:
-    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_ir --release 2> /dev/null
-
-test:cargo:compiler:
-  stage: test
-  script:
-    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_compiler --release 2> /dev/null
-
-test:cargo:runtime:
-  stage: test
-  script:
-    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_runtime --release 2> /dev/null
-
 .build_muc: &build_muc |
   if [ -d "tests/test_muc/mu-tool-compiler" ]; then rm -Rf tests/test_muc/mu-tool-compiler; fi
   cd tests/test_muc
@@ -69,6 +49,26 @@ testmuc:test_simple:
     - *build_muc
     - LD_LIBRARY_PATH=mu-tool-compiler/lib/ MUC=mu-tool-compiler/muc python2 -m pytest test_simple.py -v
   allow_failure: true
+
+test:cargo:api:
+  stage: test
+  script:
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_api --release 2> /dev/null
+
+test:cargo:ir:
+  stage: test
+  script:
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_ir --release 2> /dev/null
+
+test:cargo:compiler:
+  stage: test
+  script:
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_compiler --release 2> /dev/null
+
+test:cargo:runtime:
+  stage: test
+  script:
+    - rustup run 1.30.1-x86_64-unknown-linux-gnu cargo test test_runtime --release 2> /dev/null
 
 testmuc:test_swapstack:
   stage: test

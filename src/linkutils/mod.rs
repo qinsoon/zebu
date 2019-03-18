@@ -74,9 +74,9 @@ pub fn exec_path_nocheck(executable: PathBuf) -> Output {
 /// panics if this command does not finish normally
 fn exec_cmd(cmd: Command) -> Output {
     let output = exec_cmd_nocheck(cmd);
-    if cfg!(debug_assertions) && !output.status.success() {
+//    if cfg!(debug_assertions) && !output.status.success() {
         println!("{}", String::from_utf8(output.stderr.clone()).unwrap());
-    }
+//    }
     assert!(output.status.success());
     output
 }
