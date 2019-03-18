@@ -75,7 +75,7 @@ pub fn exec_path_nocheck(executable: PathBuf) -> Output {
 fn exec_cmd(cmd: Command) -> Output {
     let output = exec_cmd_nocheck(cmd);
     if cfg!(debug_assertions) && !output.status.success() {
-        println!(output.stderr);
+        println!("{}", output.stderr);
     }
     assert!(output.status.success());
     output
